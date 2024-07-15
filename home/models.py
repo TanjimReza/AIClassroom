@@ -4,8 +4,11 @@ from typing import Any
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager,
-                                        PermissionsMixin)
+from django.contrib.auth.models import (
+    AbstractBaseUser,
+    BaseUserManager,
+    PermissionsMixin,
+)
 from django.contrib.auth.tokens import default_token_generator
 from django.contrib.sites.shortcuts import get_current_site
 from django.core.mail import EmailMultiAlternatives
@@ -74,9 +77,11 @@ class Users(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
+
     class Meta:
-        verbose_name = "User"  
+        verbose_name = "User"
         verbose_name_plural = "Users"
+
     def __str__(self):
         return f"{self.email} ({self.user_type})"
 
@@ -96,41 +101,47 @@ class Users(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+
 class Classroom(models.Model):
-    classroom_id = models.IntegerField(primary_key=True, unique=True, auto_created=True,)
+    classroom_id = models.IntegerField(
+        primary_key=True,
+        unique=True,
+        auto_created=True,
+    )
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     def get_classroom_admins(self):
         return Users.objects.filter(classroomadmin__classroom_id=self.classroom_id)
-    
+
     def __str__(self):
         return self.name
 
 
 class ClassroomAdmin(models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE)
-    #? Add more fields if needed 
+    # ? Add more fields if needed
     classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.user.email
-    
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-    
+
     def delete(self, *args, **kwargs):
         user = self.user
         super().delete(*args, **kwargs)
         user.delete()
-        
-        
+
+
 class Student(models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE)
     classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+
     def __str__(self):
         return self.user.email
 
