@@ -4,3 +4,13 @@ repos:
     hooks:
     - id: black
       language_version: python3.12.3
+
+- repo: https://github.com/Riverside-Healthcare/djLint
+  rev: v1.34.1  
+  hooks:
+  - id: djlint
+    name: djLint
+    entry: djlint
+    language: python
+    types: [html]
+    args: [--reformat]  
