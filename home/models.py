@@ -62,9 +62,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
         max_length=20,
         choices=[
             ("general_admin", "General Admin"),
-            ("publisher_admin", "Publisher"),
-            ("school_admin", "School Admin"),
-            ("school_teacher", "School Teacher"),
+            ("classroom_admin", "Class Admin"),
             ("student", "Student"),
         ],
     )
@@ -76,7 +74,9 @@ class Users(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
-
+    class Meta:
+        verbose_name = "User"  
+        verbose_name_plural = "Users"
     def __str__(self):
         return f"{self.email} ({self.user_type})"
 
@@ -96,19 +96,48 @@ class Users(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+class Classroom(models.Model):
+    classroom_id = models.IntegerField(primary_key=True, unique=True, auto_created=True,)
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-class PublisherAdminProfile(models.Model):
-    user = models.OneToOneField(
-        Users, on_delete=models.CASCADE, primary_key=True)
-    main_publisher_admin = models.CharField(max_length=100)
 
+    def get_classroom_admins(self):
+        return Users.objects.filter(classroomadmin__classroom_id=self.classroom_id)
+    
     def __str__(self):
-        return f" {self.user.email} - {self.publisher_id.publisher_name}"
+        return self.name
 
-    # ? We want to make sure that if a PublisherAdmin is deleted,
-    # ? the associated user is also deleted since they are linked
+
+class ClassroomAdmin(models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+    #? Add more fields if needed 
+    classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.user.email
+    
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+    
     def delete(self, *args, **kwargs):
         user = self.user
-        # Call the superclass delete method to delete the profile
         super().delete(*args, **kwargs)
-        user.delete()  # Delete the associated user
+        user.delete()
+        
+        
+class Student(models.Model):
+    user = models.OneToOneField(Users, on_delete=models.CASCADE)
+    classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.user.email
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        user = self.user
+        super().delete(*args, **kwargs)
+        user.delete()
