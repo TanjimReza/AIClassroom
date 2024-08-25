@@ -106,7 +106,9 @@ class Users(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+
 User = get_user_model()
+
 
 class Classroom(models.Model):
     name = models.CharField(max_length=100)
@@ -114,10 +116,14 @@ class Classroom(models.Model):
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_classrooms')
+    created_by = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="created_classrooms"
+    )
     is_active = models.BooleanField(default=True)
     enrollment_code = models.CharField(max_length=20, unique=True)
-    students = models.ManyToManyField(User, through='Student', related_name='enrolled_classrooms')
+    students = models.ManyToManyField(
+        User, through="Student", related_name="enrolled_classrooms"
+    )
     capacity = models.IntegerField(default=30)
     start_date = models.DateField(null=True, blank=True)
     end_date = models.DateField(null=True, blank=True)
@@ -133,35 +139,3 @@ class Classroom(models.Model):
 
     def __str__(self):
         return self.name
-
-
-class ClassroomAdmin(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.user.email
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        user = self.user
-        super().delete(*args, **kwargs)
-        user.delete()
-
-
-class Student(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.user.email
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-    def delete(self, *args, **kwargs):
-        user = self.user
-        super().delete(*args, **kwargs)
-        user.delete()
