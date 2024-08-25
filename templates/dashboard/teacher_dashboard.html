@@ -1,0 +1,136 @@
+<!-- teacher_dashboard.html -->
+{% extends "base_generic.html" %}
+
+{% block content %}
+<h2>Teacher Dashboard</h2>
+
+<!-- Search Bar -->
+<div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search Classrooms..." onkeyup="searchClassrooms()">
+</div>
+
+<!-- Filter Options -->
+<div class="filter-options">
+    <button onclick="showCreatedClassrooms()">Created by You</button>
+    <button onclick="showEnrolledClassrooms()">All Enrolled Classrooms</button>
+    <button onclick="showOtherClassrooms()">Owned by Others</button>
+</div>
+
+<!-- Create Classroom Button -->
+<div class="create-classroom">
+    <a href="{% url 'create_classroom' %}" class="btn btn-primary">Create New Classroom</a>
+</div>
+
+<!-- Classroom Cards -->
+<div id="classroom-list">
+    <!-- Created by You -->
+    <div id="created-classrooms">
+        <h3>Created by You</h3>
+        {% for classroom in created_classrooms %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ classroom.name }}</h5>
+                <p class="card-text">{{ classroom.description }}</p>
+                <a href="{% url 'classroom_detail' classroom.slug %}" class="btn btn-primary">View Classroom</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No classrooms found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- All Enrolled Classrooms -->
+    <div id="enrolled-classrooms" style="display: none;">
+        <h3>All Enrolled Classrooms</h3>
+        {% for classroom in enrolled_classrooms %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ classroom.name }}</h5>
+                <p class="card-text">{{ classroom.description }}</p>
+                <a href="{% url 'classroom_detail' classroom.slug %}" class="btn btn-primary">View Classroom</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No classrooms found.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Owned by Others -->
+    <div id="other-classrooms" style="display: none;">
+        <h3>Owned by Others</h3>
+        {% for classroom in other_classrooms %}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">{{ classroom.name }}</h5>
+                <p class="card-text">{{ classroom.description }}</p>
+                <a href="{% url 'classroom_detail' classroom.slug %}" class="btn btn-primary">View Classroom</a>
+            </div>
+        </div>
+        {% empty %}
+        <p>No classrooms found.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Add some basic CSS -->
+<style>
+    .search-bar {
+        margin-bottom: 15px;
+    }
+    .filter-options button {
+        margin-right: 10px;
+        margin-bottom: 15px;
+    }
+    .card {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .card-body {
+        padding: 15px;
+    }
+    .card-title {
+        font-size: 1.25rem;
+    }
+    .create-classroom {
+        margin-bottom: 20px;
+    }
+</style>
+
+<!-- Add JavaScript for filtering -->
+<script>
+function showCreatedClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'block';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showEnrolledClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'block';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showOtherClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'block';
+}
+
+function searchClassrooms() {
+    var input, filter, cards, cardContainer, title, i;
+    input = document.getElementById("search-input");
+    filter = input.value.toUpperCase();
+    cardContainer = document.getElementById("classroom-list");
+    cards = cardContainer.getElementsByClassName("card");
+    for (i = 0; i < cards.length; i++) {
+        title = cards[i].getElementsByClassName("card-title")[0];
+        if (title.innerHTML.toUpperCase().indexOf(filter) > -1) {
+            cards[i].style.display = "";
+        } else {
+            cards[i].style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}

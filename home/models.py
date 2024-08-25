@@ -22,6 +22,7 @@ from django.urls import reverse
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from django.utils.text import slugify
+import uuid
 
 
 class CustomUserManager(BaseUserManager):
@@ -75,6 +76,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
     is_new_user = models.BooleanField(default=True)
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
+    email_verified = models.BooleanField(default=False)
+    email_verification_token = models.UUIDField(default=uuid.uuid4)
 
     objects = CustomUserManager()
 
@@ -87,6 +90,8 @@ class Users(AbstractBaseUser, PermissionsMixin):
 
     def save(self, *args, **kwargs):
         is_new = self.pk is None
+        if not self.email_verification_token:
+            self.email_verification_token = uuid.uuid4()
         super().save(*args, **kwargs)
 
         if is_new:
@@ -101,30 +106,38 @@ class Users(AbstractBaseUser, PermissionsMixin):
     def get_full_name(self):
         return f"{self.first_name} {self.last_name}"
 
+User = get_user_model()
 
 class Classroom(models.Model):
-    classroom_id = models.IntegerField(
-        primary_key=True,
-        unique=True,
-        auto_created=True,
-    )
     name = models.CharField(max_length=100)
     slug = models.SlugField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_classrooms')
+    is_active = models.BooleanField(default=True)
+    enrollment_code = models.CharField(max_length=20, unique=True)
+    students = models.ManyToManyField(User, through='Student', related_name='enrolled_classrooms')
+    capacity = models.IntegerField(default=30)
+    start_date = models.DateField(null=True, blank=True)
+    end_date = models.DateField(null=True, blank=True)
+    schedule = models.JSONField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
     def get_classroom_admins(self):
-        return Users.objects.filter(classroomadmin__classroom_id=self.classroom_id)
+        return User.objects.filter(classroomadmin__classroom=self)
 
     def __str__(self):
         return self.name
 
 
 class ClassroomAdmin(models.Model):
-    user = models.OneToOneField(Users, on_delete=models.CASCADE)
-    # ? Add more fields if needed
-    classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.email
@@ -139,8 +152,8 @@ class ClassroomAdmin(models.Model):
 
 
 class Student(models.Model):
-    user = models.OneToOneField(Users, on_delete=models.CASCADE)
-    classroom_id = models.ForeignKey(Classroom, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.user.email
