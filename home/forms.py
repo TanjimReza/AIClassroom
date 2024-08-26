@@ -50,7 +50,7 @@ class AdminUserCreationForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.user_type = "admin"
+        user.user_type = "general_admin"
         if commit:
             user.save()
             AdminProfile.objects.create(user=user)

@@ -28,15 +28,15 @@ class CustomUserAdmin(UserAdmin):
     add_form = UsersCreationForm
     form = UsersCreationForm
     model = Users
-    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser"]
-    list_filter = ["user_type", "is_active", "is_staff", "is_superuser"]
+    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
+    list_filter = ["user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
     search_fields = ["email", "first_name", "last_name", "user_type"]
-    ordering = ["email"]  # Replace 'username' with 'email'
+    ordering = ["email"]
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name")}),
-        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser")}),
+        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser", "email_verified")}),
         ("Important Dates", {"fields": ("date_last_login",)}),
     )
     add_fieldsets = (
@@ -44,7 +44,7 @@ class CustomUserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser"),
+                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser", "email_verified"),
             },
         ),
     )
