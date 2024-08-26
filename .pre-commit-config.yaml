@@ -4,6 +4,7 @@ repos:
     hooks:
     - id: black
       language_version: python3.12.3
+      args: [--line-length=200, --verbose]
 
 - repo: https://github.com/Riverside-Healthcare/djLint
   rev: v1.34.1  

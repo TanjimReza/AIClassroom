@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Password Reset</title>
+        <title>Login</title>
         <style>
       .glass {
         background: rgba(255, 255, 255, 0.1);
@@ -15,7 +15,7 @@
     </head>
     <body class="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-blue-900">
         <div class="glass p-8 rounded-xl shadow-2xl max-w-md w-full">
-            <h2 class="text-3xl font-bold mb-6 text-center text-white">Password Reset</h2>
+            <h2 class="text-3xl font-bold mb-6 text-center text-white">Login</h2>
             {% if form.errors %}
                 <div class="mb-4 p-4 bg-red-500 bg-opacity-20 border border-red-400 text-white rounded-md">
                     <p class="font-bold">Error:</p>
@@ -29,21 +29,33 @@
             <form method="post" class="space-y-6">
                 {% csrf_token %}
                 <div>
-                    <label for="{{ form.email.id_for_label }}"
-                           class="block text-sm font-medium text-gray-300">Email:</label>
-                    <input type="email"
-                           name="{{ form.email.html_name }}"
-                           id="{{ form.email.id_for_label }}"
+                    <label for="id_username" class="block text-sm font-medium text-gray-300">Email:</label>
+                    <input type="text"
+                           name="username"
+                           id="id_username"
                            class="mt-1 block w-full px-4 py-3 bg-white bg-opacity-10 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                           autofocus
+                           autocapitalize="none"
+                           autocomplete="username"
+                           maxlength="254"
+                           required />
+                </div>
+                <div>
+                    <label for="id_password" class="block text-sm font-medium text-gray-300">Password:</label>
+                    <input type="password"
+                           name="password"
+                           id="id_password"
+                           class="mt-1 block w-full px-4 py-3 bg-white bg-opacity-10 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                           autocomplete="current-password"
                            required />
                 </div>
                 <button type="submit"
                         class="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-75">
-                    Reset Password
+                    Login
                 </button>
             </form>
-            <a href="{% url 'login' %}"
-               class="block mt-6 text-center text-sm text-blue-300 hover:text-white transition duration-300 ease-in-out">Back to Login</a>
+            <a href="/accounts/password_reset/"
+               class="block mt-6 text-center text-sm text-blue-300 hover:text-white transition duration-300 ease-in-out">Forgot password?</a>
         </div>
         <script src="https://cdn.tailwindcss.com"></script>
     </body>

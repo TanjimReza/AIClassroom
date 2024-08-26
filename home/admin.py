@@ -1,77 +1,94 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
+from django.core.exceptions import ValidationError
+from .models import Users, AdminProfile, TeacherProfile, StudentProfile, Classroom
 
-from .models import Classroom, ClassroomAdmin, Student, Users
+
+class AdminProfileInline(admin.StackedInline):
+    model = AdminProfile
+    can_delete = False
+    verbose_name_plural = "Admin Profile"
 
 
-class CustomUserAdmin(UserAdmin):
+class TeacherProfileInline(admin.StackedInline):
+    model = TeacherProfile
+    can_delete = False
+    verbose_name_plural = "Teacher Profile"
+    autocomplete_fields = ["assigned_classroom"]
+
+
+class StudentProfileInline(admin.StackedInline):
+    model = StudentProfile
+    can_delete = False
+    verbose_name_plural = "Student Profile"
+    autocomplete_fields = ["enrolled_classroom"]
+
+
+class CustomUserAdmin(admin.ModelAdmin):
     model = Users
-
-    list_display = (
-        "email",
-        "user_type",
-        "first_name",
-        "last_name",
-        "is_staff",
-        "is_active",
-        "is_superuser",
-    )
-    list_filter = ("email", "user_type", "is_staff", "is_active", "is_superuser")
+    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser", "email_verified", "date_last_login"]
+    list_filter = ["user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
+    search_fields = ["email", "first_name", "last_name", "user_type"]
+    ordering = ["email"]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name", "user_type")}),
-        ("Permissions", {"fields": ("is_staff", "is_active", "is_superuser")}),
+        ("Personal Info", {"fields": ("first_name", "last_name")}),
+        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser", "email_verified")}),
+        ("Important Dates", {"fields": ("date_last_login",)}),
     )
-
-    search_fields = ("email", "first_name", "last_name")
-
-    fieldsets = (
-        (None, {"fields": ("email", "password")}),
-        ("Personal info", {"fields": ("first_name", "last_name", "user_type")}),
-        ("Permissions", {"fields": ("is_staff", "is_active", "is_superuser")}),
-    )
-
     add_fieldsets = (
         (
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2", "user_type"),
+                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser", "email_verified"),
             },
         ),
     )
-    ordering = ("email",)
 
     def get_inline_instances(self, request, obj=None):
         if not obj:
-            return list()
+            return []
         inline_instances = []
+        if obj.user_type == "general_admin":
+            inline_instances.append(AdminProfileInline(self.model, self.admin_site))
+        if obj.user_type == "teacher":
+            inline_instances.append(TeacherProfileInline(self.model, self.admin_site))
         if obj.user_type == "student":
             inline_instances.append(StudentProfileInline(self.model, self.admin_site))
-
-        if obj.user_type == "classroom_admin":
-            inline_instances.append(ClassroomAdminInline(self.model, self.admin_site))
-        return super().get_inline_instances(request, obj)
+        return inline_instances
 
 
-class StudentProfileInline(admin.StackedInline):
-    model = Student
-    can_delete = False
-    verbose_name_plural = "Students"
-
-
-class ClassroomAdminInline(admin.ModelAdmin):
-    # autocomplete_fields = ['classroom_id']
-    list_display = (
-        "classroom_id",
-        "name",
-        "slug",
-        "description",
-        "created_at",
-        "updated_at",
-    )
-
-
-admin.site.register(Classroom)
-admin.site.register(ClassroomAdmin)
 admin.site.register(Users, CustomUserAdmin)
+
+
+@admin.register(AdminProfile)
+class AdminProfileAdmin(admin.ModelAdmin):
+    list_display = ["user", "role_description"]
+    search_fields = ["user__email", "role_description"]
+    autocomplete_fields = ["user"]
+
+
+@admin.register(TeacherProfile)
+class TeacherProfileAdmin(admin.ModelAdmin):
+    list_display = ["user", "subject_specialization", "assigned_classroom"]
+    search_fields = ["user__email", "subject_specialization", "assigned_classroom__name"]
+    list_filter = ["subject_specialization"]
+    autocomplete_fields = ["user", "assigned_classroom"]
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ["user", "enrolled_classroom"]
+    search_fields = ["user__email", "enrolled_classroom__name"]
+    list_filter = ["enrolled_classroom"]
+    autocomplete_fields = ["user", "enrolled_classroom"]
+
+
+@admin.register(Classroom)
+class ClassroomAdmin(admin.ModelAdmin):
+    list_display = ["name", "slug", "created_by", "is_active", "capacity", "created_at", "updated_at"]
+    search_fields = ["name", "slug", "created_by__email"]
+    list_filter = ["is_active", "created_at"]
+    ordering = ["name"]
+    prepopulated_fields = {"slug": ("name",)}
+    autocomplete_fields = ["created_by"]
