@@ -1,24 +1,6 @@
-import os
-import shutil
-import uuid
-from typing import Any
-
-from django.conf import settings
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-from django.contrib.auth.tokens import default_token_generator
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import EmailMultiAlternatives
-from django.db import models, transaction
-from django.db.models import F
-from django.db.utils import IntegrityError
-from django.dispatch import receiver
-from django.http import HttpRequest
-from django.template.loader import render_to_string
-from django.urls import reverse
-from django.utils.encoding import force_bytes
-from django.utils.http import urlsafe_base64_encode
-from django.utils.text import slugify
+from django.db import models
+import uuid
 
 
 class CustomUserManager(BaseUserManager):
@@ -54,11 +36,9 @@ class CustomUserManager(BaseUserManager):
 
 
 class Users(AbstractBaseUser, PermissionsMixin):
-
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
-
     user_type = models.CharField(
         max_length=20,
         choices=[
@@ -76,10 +56,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     email_verification_token = models.UUIDField(default=uuid.uuid4)
 
     USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = [
-        "first_name",
-        "last_name",
-    ]
+    REQUIRED_FIELDS = ["first_name", "last_name"]
 
     objects = CustomUserManager()
 
@@ -99,9 +76,6 @@ class Users(AbstractBaseUser, PermissionsMixin):
         return f"{self.first_name} {self.last_name}"
 
 
-User = get_user_model()
-
-
 class AdminProfile(models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)
     role_description = models.CharField(max_length=100, default="System Administrator")
@@ -118,7 +92,6 @@ class AdminProfile(models.Model):
 class TeacherProfile(models.Model):
     user = models.OneToOneField(Users, on_delete=models.CASCADE, primary_key=True)
     subject_specialization = models.CharField(max_length=100)
-    # Changed to ForeignKey relationships
     assigned_classroom = models.ForeignKey("Classroom", on_delete=models.CASCADE, related_name="teachers", null=True, blank=True)
 
     def __str__(self):

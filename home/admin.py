@@ -1,6 +1,7 @@
 from django.contrib import admin
-from django.core.exceptions import ValidationError
-from .models import Users, AdminProfile, TeacherProfile, StudentProfile, Classroom
+from django.contrib.auth.admin import UserAdmin
+from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
+from .models import AdminProfile, StudentProfile, TeacherProfile, Users, Classroom
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -23,16 +24,19 @@ class StudentProfileInline(admin.StackedInline):
     autocomplete_fields = ["enrolled_classroom"]
 
 
-class CustomUserAdmin(admin.ModelAdmin):
+class CustomUserAdmin(UserAdmin):
+    add_form = UsersCreationForm
+    form = UsersCreationForm
     model = Users
-    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser", "email_verified", "date_last_login"]
-    list_filter = ["user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
+    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser"]
+    list_filter = ["user_type", "is_active", "is_staff", "is_superuser"]
     search_fields = ["email", "first_name", "last_name", "user_type"]
-    ordering = ["email"]
+    ordering = ["email"]  # Replace 'username' with 'email'
+
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name")}),
-        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser", "email_verified")}),
+        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser")}),
         ("Important Dates", {"fields": ("date_last_login",)}),
     )
     add_fieldsets = (
@@ -40,7 +44,7 @@ class CustomUserAdmin(admin.ModelAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser", "email_verified"),
+                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser"),
             },
         ),
     )
@@ -49,11 +53,11 @@ class CustomUserAdmin(admin.ModelAdmin):
         if not obj:
             return []
         inline_instances = []
-        if obj.user_type == "general_admin":
-            inline_instances.append(AdminProfileInline(self.model, self.admin_site))
         if obj.user_type == "teacher":
             inline_instances.append(TeacherProfileInline(self.model, self.admin_site))
-        if obj.user_type == "student":
+        elif obj.user_type == "general_admin":
+            inline_instances.append(AdminProfileInline(self.model, self.admin_site))
+        elif obj.user_type == "student":
             inline_instances.append(StudentProfileInline(self.model, self.admin_site))
         return inline_instances
 
