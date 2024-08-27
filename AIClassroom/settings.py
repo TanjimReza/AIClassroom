@@ -149,3 +149,5 @@ AUTH_USER_MODEL = "home.Users"
 
 EMAIL_BACKEND = "django.core.mail.backends.filebased.EmailBackend"
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, "emails")
+
+SITE_URL = 'http://127.0.0.1:8000'

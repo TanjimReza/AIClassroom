@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
-from .models import AdminProfile, StudentProfile, TeacherProfile, Users, Classroom
+from .models import AdminProfile, StudentProfile, TeacherProfile, Users, Classroom, Invitation
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -96,3 +96,7 @@ class ClassroomAdmin(admin.ModelAdmin):
     ordering = ["name"]
     prepopulated_fields = {"slug": ("name",)}
     autocomplete_fields = ["created_by"]
+    filter_horizontal = ('co_teachers',)
+
+
+admin.site.register(Invitation)

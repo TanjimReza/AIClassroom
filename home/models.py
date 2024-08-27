@@ -1,7 +1,12 @@
+from datetime import timedelta
+import uuid
+from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
-import uuid
-
+from django.utils.text import slugify
+from django.core.mail import send_mail
+from django.urls import reverse
+from django.conf import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, user_type="student", **extra_fields):
@@ -48,7 +53,7 @@ class Users(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_superuser = models.BooleanField(default=False)
-    email_verified = models.BooleanField(default=False)
+    email_verified = models.BooleanField(default=True)
     email_verification_token = models.UUIDField(default=uuid.uuid4)
 
     USERNAME_FIELD = "email"
@@ -119,8 +124,72 @@ class Classroom(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.ForeignKey(Users, on_delete=models.CASCADE, related_name="created_classrooms")
+    co_teachers = models.ManyToManyField(Users, related_name="co_teaching_classrooms", blank=True)
     is_active = models.BooleanField(default=True)
     capacity = models.IntegerField(default=30)
 
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.name
+
+    def add_co_teacher(self, teacher: Users):
+        if teacher.user_type == 'teacher':
+            self.co_teachers.add(teacher)
+        else:
+            raise ValueError("Only users with teacher role can be co-teachers.")
+
+
+class Invitation(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="invitations")
+    email = models.EmailField()
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    is_accepted = models.BooleanField(default=False)
+    invited_at = models.DateTimeField(auto_now_add=True)
+    enrolment_link_sent = models.BooleanField(default=False)
+    enrolment_token_expiry = models.DateTimeField(null=True, blank=True)
+    register_first = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"Invitation to {self.email} for {self.classroom.name}"
+
+    def accept(self, user: Users):
+        if user.email == self.email:
+            if user.user_type == 'student':
+                student_profile, created = StudentProfile.objects.get_or_create(user=user, defaults={'enrolled_classroom': self.classroom})
+                student_profile.enrolled_classroom = self.classroom
+                student_profile.save()
+                self.is_accepted = True
+                self.save()
+            else:
+                teacher_profile, created = TeacherProfile.objects.get_or_create(user=user, defaults={'assigned_classroom': self.classroom})
+                teacher_profile.assigned_classroom = self.classroom
+                teacher_profile.save()
+                self.is_accepted = True
+                self.save()
+        else:
+            raise ValueError("Email mismatch for this invitation.")
+
+    def register_first_enrolment(self):
+        enrolment_url = reverse('student_registration', kwargs={'token': self.token})
+        full_url = f"{settings.SITE_URL}{enrolment_url}"
+        subject = f"Registration required to join {self.classroom.name}"
+        message = f"You have been invited to join the classroom {self.classroom.name}. Please register here: {full_url} (expires in 48 hours)."
+
+        self.enrolment_token_expiry = timezone.now() + timedelta(hours=48)
+        self.enrolment_link_sent = True
+        self.register_first = True
+        self.save()
+
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [self.email])
+
+    def send_invitation_email(self):
+        token_url = reverse('accept_invitation', kwargs={'token': self.token})
+        full_url = f"{settings.SITE_URL}{token_url}"
+        subject = f"Invitation to join {self.classroom.name}"
+        message = f"You have been invited to join the classroom {self.classroom.name}. Click the link to join: {full_url}"
+
+        send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [self.email])
