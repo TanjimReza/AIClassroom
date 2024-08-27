@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+
 from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
-from .models import AdminProfile, StudentProfile, TeacherProfile, Users, Classroom, Invitation
+from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -28,15 +29,41 @@ class CustomUserAdmin(UserAdmin):
     add_form = UsersCreationForm
     form = UsersCreationForm
     model = Users
-    list_display = ["email", "first_name", "last_name", "user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
-    list_filter = ["user_type", "is_active", "is_staff", "is_superuser", "email_verified"]
+    list_display = [
+        "email",
+        "first_name",
+        "last_name",
+        "user_type",
+        "is_active",
+        "is_staff",
+        "is_superuser",
+        "email_verified",
+    ]
+    list_filter = [
+        "user_type",
+        "is_active",
+        "is_staff",
+        "is_superuser",
+        "email_verified",
+    ]
     search_fields = ["email", "first_name", "last_name", "user_type"]
     ordering = ["email"]
 
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("Personal Info", {"fields": ("first_name", "last_name")}),
-        ("Permissions", {"fields": ("user_type", "is_staff", "is_active", "is_superuser", "email_verified")}),
+        (
+            "Permissions",
+            {
+                "fields": (
+                    "user_type",
+                    "is_staff",
+                    "is_active",
+                    "is_superuser",
+                    "email_verified",
+                )
+            },
+        ),
         ("Important Dates", {"fields": ("date_last_login",)}),
     )
     add_fieldsets = (
@@ -44,7 +71,18 @@ class CustomUserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "password1", "password2", "first_name", "last_name", "user_type", "is_staff", "is_active", "is_superuser", "email_verified"),
+                "fields": (
+                    "email",
+                    "password1",
+                    "password2",
+                    "first_name",
+                    "last_name",
+                    "user_type",
+                    "is_staff",
+                    "is_active",
+                    "is_superuser",
+                    "email_verified",
+                ),
             },
         ),
     )
@@ -75,7 +113,11 @@ class AdminProfileAdmin(admin.ModelAdmin):
 @admin.register(TeacherProfile)
 class TeacherProfileAdmin(admin.ModelAdmin):
     list_display = ["user", "subject_specialization", "assigned_classroom"]
-    search_fields = ["user__email", "subject_specialization", "assigned_classroom__name"]
+    search_fields = [
+        "user__email",
+        "subject_specialization",
+        "assigned_classroom__name",
+    ]
     list_filter = ["subject_specialization"]
     autocomplete_fields = ["user", "assigned_classroom"]
 
@@ -90,13 +132,28 @@ class StudentProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Classroom)
 class ClassroomAdmin(admin.ModelAdmin):
-    list_display = ["name", "slug", "created_by", "is_active", "capacity", "created_at", "updated_at"]
+    list_display = [
+        "name",
+        "slug",
+        "created_by",
+        "is_active",
+        "capacity",
+        "created_at",
+        "updated_at",
+    ]
     search_fields = ["name", "slug", "created_by__email"]
     list_filter = ["is_active", "created_at"]
     ordering = ["name"]
     prepopulated_fields = {"slug": ("name",)}
     autocomplete_fields = ["created_by"]
-    filter_horizontal = ('co_teachers',)
+    filter_horizontal = ("co_teachers",)
 
 
 admin.site.register(Invitation)
+
+
+@admin.register(CourseMaterial)
+class CourseMaterialAdmin(admin.ModelAdmin):
+    list_display = ["title", "classroom", "uploaded_by", "uploaded_at"]
+    search_fields = ["title", "classroom__name", "uploaded_by__email"]
+    list_filter = ["classroom", "uploaded_at"]

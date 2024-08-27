@@ -1,25 +1,28 @@
-
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ classroom.name }}</h2>
-    <p>{{ classroom.description }}</p>
-
-    <h3>Students</h3>
-    <ul>
-        {% for student in students %}
-        <li>{{ student.user.get_full_name }} ({{ student.user.email }})</li>
-        {% empty %}
-        <li>No students enrolled.</li>
-        {% endfor %}
-    </ul>
-
-    <h3>Co-Teachers</h3>
-    <ul>
-        {% for co_teacher in co_teachers %}
-        <li>{{ co_teacher.user.get_full_name }} ({{ co_teacher.user.email }})</li>
-        {% empty %}
-        <li>No co-teachers assigned.</li>
-        {% endfor %}
-    </ul>
-</div>
+    <div class="container mt-4">
+        <h2>{{ classroom.name }}</h2>
+        <p>{{ classroom.description }}</p>
+        {% if user.is_authenticated %}
+            {% if user.is_staff or user == classroom.created_by %}
+                <a href="{% url 'upload_material' slug=classroom.slug %}"
+                   class="btn btn-secondary">Upload Course Material</a>
+            {% endif %}
+        {% endif %}
+        <h3>Students</h3>
+        <ul>
+            {% for student in students %}
+                <li>{{ student.user.get_full_name }} ({{ student.user.email }})</li>
+            {% empty %}
+                <li>No students enrolled.</li>
+            {% endfor %}
+        </ul>
+        <h3>Co-Teachers</h3>
+        <ul>
+            {% for co_teacher in co_teachers %}
+                <li>{{ co_teacher.user.get_full_name }} ({{ co_teacher.user.email }})</li>
+            {% empty %}
+                <li>No co-teachers assigned.</li>
+            {% endfor %}
+        </ul>
+    </div>
 {% endblock %}
