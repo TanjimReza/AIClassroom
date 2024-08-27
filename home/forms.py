@@ -1,6 +1,7 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordResetForm
-from .models import Users, TeacherProfile, AdminProfile, StudentProfile, Classroom, Invitation
+from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
+
+from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users
 
 
 class CustomLoginForm(AuthenticationForm):
@@ -74,21 +75,21 @@ class StudentUserCreationForm(UserCreationForm):
 class ClassroomForm(forms.ModelForm):
     class Meta:
         model = Classroom
-        fields = ['name', 'description', 'capacity']
+        fields = ["name", "description", "capacity"]
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
+            "description": forms.Textarea(attrs={"rows": 3}),
         }
 
 
 class InvitationForm(forms.Form):
-    email = forms.EmailField(label='Student Email')
+    email = forms.EmailField(label="Student Email")
 
     def __init__(self, *args, **kwargs):
-        self.classroom = kwargs.pop('classroom', None)
+        self.classroom = kwargs.pop("classroom", None)
         super().__init__(*args, **kwargs)
 
     def save(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data["email"]
         invitation = Invitation.objects.create(classroom=self.classroom, email=email)
         return invitation
 
@@ -99,10 +100,10 @@ class StudentRegistrationForm(forms.ModelForm):
 
     class Meta:
         model = Users
-        fields = ['email', 'first_name', 'last_name']
+        fields = ["email", "first_name", "last_name"]
         widgets = {
-            'email': forms.EmailInput(attrs={'readonly': 'readonly'}),
-            'user_type': forms.HiddenInput(),
+            "email": forms.EmailInput(attrs={"readonly": "readonly"}),
+            "user_type": forms.HiddenInput(),
         }
 
     def clean_password2(self):
@@ -121,3 +122,55 @@ class StudentRegistrationForm(forms.ModelForm):
         return user
 
 
+class MultipleFileInput(forms.ClearableFileInput):
+    allow_multiple_selected = True
+
+
+class MultipleFileField(forms.FileField):
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault("widget", MultipleFileInput())
+        super().__init__(*args, **kwargs)
+
+    def clean(self, data, initial=None):
+        single_file_clean = super().clean
+        if isinstance(data, (list, tuple)):
+            result = [single_file_clean(d, initial) for d in data]
+        else:
+            result = [single_file_clean(data, initial)]
+        return result
+
+
+from django import forms
+from .models import CourseMaterial
+from django import forms
+from .models import CourseMaterial
+
+
+class CourseMaterialForm(forms.ModelForm):
+    file = MultipleFileField(required=False)
+    title = forms.CharField(required=False, max_length=255)
+    description = forms.CharField(widget=forms.Textarea, required=False)
+
+    class Meta:
+        model = CourseMaterial
+        fields = ["file", "title", "description"]
+
+    def __init__(self, *args, **kwargs):
+        self.classroom = kwargs.pop("classroom", None)
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        files = self.cleaned_data["file"]
+        materials = []
+        for file in files:
+            material = CourseMaterial(
+                title=self.cleaned_data["title"] or file.name,  # Use provided title or default to filename
+                description=self.cleaned_data.get("description"),  # Use provided description or None if not filled
+                file=file,
+                classroom=self.classroom,
+                uploaded_by=self.instance.uploaded_by if self.instance.uploaded_by else None,
+            )
+            if commit:
+                material.save()
+            materials.append(material)
+        return materials
