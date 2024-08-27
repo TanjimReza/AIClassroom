@@ -1,0 +1,166 @@
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Teacher Dashboard</h2>
+
+    <!-- Search Bar -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" id="search-input" placeholder="Search Classrooms..." onkeyup="searchClassrooms()">
+        </div>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="btn-group" role="group" aria-label="Filter Options">
+                <button type="button" class="btn btn-secondary" onclick="showCreatedClassrooms()">Created by You</button>
+                <button type="button" class="btn btn-secondary" onclick="showEnrolledClassrooms()">All Enrolled Classrooms</button>
+                <button type="button" class="btn btn-secondary" onclick="showOtherClassrooms()">Owned by Others</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Classroom Button -->
+    <div class="row mb-4">
+        <div class="col-md-12 text-right">
+            <a href="{% url 'create_classroom' %}" class="btn btn-primary">Create New Classroom</a>
+        </div>
+    </div>
+
+    <!-- Classroom Cards -->
+    <div id="classroom-list">
+        <!-- Created by You -->
+        <div id="created-classrooms">
+            <h3>Created by You</h3>
+            <div class="row">
+                {% for classroom in created_classrooms %}
+                <div class="col-md-4">
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ classroom.name }}</h5>
+                            <p class="card-text">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}" class="btn btn-outline-primary">View Classroom</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-md-12">
+                    <p class="text-muted">No classrooms found.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- All Enrolled Classrooms -->
+        <div id="enrolled-classrooms" style="display: none;">
+            <h3>All Enrolled Classrooms</h3>
+            <div class="row">
+                {% for classroom in enrolled_classrooms %}
+                <div class="col-md-4">
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ classroom.name }}</h5>
+                            <p class="card-text">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}" class="btn btn-outline-primary">View Classroom</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-md-12">
+                    <p class="text-muted">No classrooms found.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Owned by Others -->
+        <div id="other-classrooms" style="display: none;">
+            <h3>Owned by Others</h3>
+            <div class="row">
+                {% for classroom in other_classrooms %}
+                <div class="col-md-4">
+                    <div class="card mb-4 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ classroom.name }}</h5>
+                            <p class="card-text">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}" class="btn btn-outline-primary">View Classroom</a>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-md-12">
+                    <p class="text-muted">No classrooms found.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add some improved CSS -->
+<style>
+    .search-bar {
+        margin-bottom: 20px;
+    }
+    .filter-options button {
+        margin-right: 10px;
+        margin-bottom: 10px;
+    }
+    .card {
+        margin-bottom: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .card-body {
+        padding: 20px;
+    }
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    .card-text {
+        font-size: 1rem;
+    }
+    .btn-outline-primary {
+        margin-top: 10px;
+    }
+</style>
+
+<!-- Add JavaScript for filtering -->
+<script>
+function showCreatedClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'block';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showEnrolledClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'block';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showOtherClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'block';
+}
+
+function searchClassrooms() {
+    var input, filter, cards, cardContainer, title, i;
+    input = document.getElementById("search-input");
+    filter = input.value.toUpperCase();
+    cardContainer = document.getElementById("classroom-list");
+    cards = cardContainer.getElementsByClassName("card");
+    for (i = 0; i < cards.length; i++) {
+        title = cards[i].getElementsByClassName("card-title")[0];
+        if (title.innerHTML.toUpperCase().indexOf(filter) > -1) {
+            cards[i].style.display = "";
+        } else {
+            cards[i].style.display = "none";
+        }
+    }
+}
+</script>
+{% endblock %}
