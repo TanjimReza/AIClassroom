@@ -1,3 +1,4 @@
+from .models import Classroom, CourseMaterial, Lesson
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
@@ -155,5 +156,23 @@ admin.site.register(Invitation)
 @admin.register(CourseMaterial)
 class CourseMaterialAdmin(admin.ModelAdmin):
     list_display = ["title", "classroom", "uploaded_by", "uploaded_at"]
-    search_fields = ["title", "classroom__name", "uploaded_by__email"]
+    search_fields = ["title", "description", "classroom__name", "uploaded_by__email"]
     list_filter = ["classroom", "uploaded_at"]
+    list_display = ("title", "classroom", "uploaded_at", "uploaded_by")
+    raw_id_fields = ("uploaded_by",)
+    date_hierarchy = "uploaded_at"
+    ordering = ("-uploaded_at",)
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ("title", "classroom", "deadline", "created_at", "created_by")
+    list_filter = ("classroom", "created_at", "deadline")
+    search_fields = ("title", "description", "objectives")
+    autocomplete_fields = ["course_materials"]
+    raw_id_fields = ("created_by",)
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("classroom", "created_by").prefetch_related("course_materials")

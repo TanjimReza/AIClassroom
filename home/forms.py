@@ -1,3 +1,6 @@
+from .models import Question
+from .models import Lesson, CourseMaterial
+from .models import CourseMaterial
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 
@@ -140,12 +143,6 @@ class MultipleFileField(forms.FileField):
         return result
 
 
-from django import forms
-from .models import CourseMaterial
-from django import forms
-from .models import CourseMaterial
-
-
 class CourseMaterialForm(forms.ModelForm):
     file = MultipleFileField(required=False)
     title = forms.CharField(required=False, max_length=255)
@@ -164,8 +161,10 @@ class CourseMaterialForm(forms.ModelForm):
         materials = []
         for file in files:
             material = CourseMaterial(
-                title=self.cleaned_data["title"] or file.name,  # Use provided title or default to filename
-                description=self.cleaned_data.get("description"),  # Use provided description or None if not filled
+                # Use provided title or default to filename
+                title=self.cleaned_data["title"] or file.name,
+                # Use provided description or None if not filled
+                description=self.cleaned_data.get("description"),
                 file=file,
                 classroom=self.classroom,
                 uploaded_by=self.instance.uploaded_by if self.instance.uploaded_by else None,
@@ -174,3 +173,50 @@ class CourseMaterialForm(forms.ModelForm):
                 material.save()
             materials.append(material)
         return materials
+
+
+class LessonForm(forms.ModelForm):
+    class Meta:
+        model = Lesson
+        fields = ["title", "description", "objectives", "deadline", "course_materials"]
+
+    def __init__(self, *args, **kwargs):
+        classroom = kwargs.pop("classroom", None)
+        super().__init__(*args, **kwargs)
+
+        # Restrict course materials to those within the selected classroom
+        if classroom:
+            self.fields["course_materials"].queryset = CourseMaterial.objects.filter(classroom=classroom)
+
+
+from django import forms
+from .models import Question
+from django import forms
+from .models import Question
+
+from django import forms
+from .models import Question
+
+
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ["question_text", "question_type", "choices", "correct_answer", "points"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["choices"].widget = forms.Textarea(attrs={"rows": 3, "placeholder": "Enter choices separated by commas (only for Multiple Choice)"})
+        self.fields["choices"].required = False  # Ensure choices are not required by default
+        self.fields["correct_answer"].widget = forms.TextInput(attrs={"placeholder": "Enter the correct answer"})
+
+    def clean(self):
+        cleaned_data = super().clean()
+        question_type = cleaned_data.get("question_type")
+
+        # Validate the choices field only if it's a multiple choice question
+        if question_type == "multiple_choice":
+            choices = cleaned_data.get("choices")
+            if not choices or len(choices.split(",")) < 2:
+                self.add_error("choices", "Please provide at least two choices for a multiple choice question.")
+
+        return cleaned_data

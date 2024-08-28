@@ -248,3 +248,46 @@ class CourseMaterial(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.classroom.name})"
+
+
+from django.db import models
+
+
+class Lesson(models.Model):
+    classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="lessons")
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    objectives = models.TextField(blank=True, null=True)
+    deadline = models.DateTimeField(blank=True, null=True)
+    course_materials = models.ManyToManyField(CourseMaterial, related_name="lessons", blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.title} ({self.classroom.name})"
+
+    class Meta:
+        unique_together = ("classroom", "title")  # Ensure lessons within the same classroom have unique titles
+
+
+class Question(models.Model):
+    QUESTION_TYPES = [
+        ("multiple_choice", "Multiple Choice"),
+        ("true_false", "True/False"),
+        ("short_answer", "Short Answer"),
+        ("long_answer", "Long Answer/Essay"),
+        ("fill_in_the_blank", "Fill-in-the-Blank"),
+    ]
+
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="questions")
+    question_text = models.TextField()
+    question_type = models.CharField(max_length=20, choices=QUESTION_TYPES)
+    choices = models.TextField(blank=True, null=True)
+    correct_answer = models.TextField(blank=True, null=True)
+    points = models.IntegerField(default=1, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.get_question_type_display()} - {self.question_text[:50]}"

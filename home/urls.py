@@ -21,4 +21,13 @@ urlpatterns = [
     path("dashboard/", views.teacher_dashboard, name="teacher_dashboard"),
     path("classroom/<slug:slug>/", views.classroom_detail, name="classroom_detail"),
     path("classroom/<slug:slug>/upload_material/", views.upload_material, name="upload_material"),
+    path("classroom/<slug:classroom_slug>/lesson/create/", views.create_lesson, name="create_lesson"),
+    path("classroom/<slug:classroom_slug>/manage-content/", views.classroom_content_management, name="classroom_content_management"),
+    path("classroom/<slug:classroom_slug>/material/<int:pk>/edit/", views.edit_course_material, name="edit_course_material"),
+    path("classroom/<slug:classroom_slug>/material/<int:pk>/delete/", views.delete_course_material, name="delete_course_material"),
+    path("classroom/<slug:classroom_slug>/lesson/<int:lesson_id>/", views.lesson_detail, name="lesson_detail"),
+    path("classroom/<slug:classroom_slug>/lesson/<int:lesson_id>/", views.lesson_detail, name="lesson_detail"),
+    path("lesson/<int:lesson_id>/question/add/", views.add_question, name="add_question"),
+    path("question/<int:question_id>/edit/", views.edit_question, name="edit_question"),
+    path("question/<int:question_id>/delete/", views.delete_question, name="delete_question"),
 ]

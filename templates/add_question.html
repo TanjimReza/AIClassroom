@@ -1,0 +1,35 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold mb-4">{{ lesson.title }} - {{ view_title }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out">
+                Save Question
+            </button>
+        </form>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const questionTypeSelect = document.querySelector('#id_question_type');
+        const choicesField = document.querySelector('#id_choices');
+
+        function toggleChoicesField() {
+            if (questionTypeSelect.value === 'multiple_choice') {
+                choicesField.closest('.form-group').style.display = 'block';
+                choicesField.required = true;
+            } else {
+                choicesField.closest('.form-group').style.display = 'none';
+                choicesField.required = false;
+            }
+        }
+
+        // Initial check when the page loads
+        toggleChoicesField();
+
+        // Check each time the question type is changed
+        questionTypeSelect.addEventListener('change', toggleChoicesField);
+    });
+    </script>
+{% endblock content %}
