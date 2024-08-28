@@ -189,15 +189,6 @@ class LessonForm(forms.ModelForm):
             self.fields["course_materials"].queryset = CourseMaterial.objects.filter(classroom=classroom)
 
 
-from django import forms
-from .models import Question
-from django import forms
-from .models import Question
-
-from django import forms
-from .models import Question
-
-
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
@@ -206,7 +197,8 @@ class QuestionForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["choices"].widget = forms.Textarea(attrs={"rows": 3, "placeholder": "Enter choices separated by commas (only for Multiple Choice)"})
-        self.fields["choices"].required = False  # Ensure choices are not required by default
+        # Ensure choices are not required by default
+        self.fields["choices"].required = False
         self.fields["correct_answer"].widget = forms.TextInput(attrs={"placeholder": "Enter the correct answer"})
 
     def clean(self):
@@ -220,3 +212,7 @@ class QuestionForm(forms.ModelForm):
                 self.add_error("choices", "Please provide at least two choices for a multiple choice question.")
 
         return cleaned_data
+
+
+class GenerateAIQuestionsForm(forms.Form):
+    number_of_questions = forms.IntegerField(label="Number of Questions", min_value=1, help_text="Enter the number of AI-generated questions you want.")
