@@ -1,0 +1,47 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">{{ lesson.title }}</h2>
+        <p class="text-lg mb-4">{{ lesson.description }}</p>
+        <p class="mb-4">
+            <strong>Objectives:</strong> {{ lesson.objectives }}
+        </p>
+        <p class="mb-4">
+            <strong>Deadline:</strong> {{ lesson.deadline|date:"Y-m-d H:i" }}
+        </p>
+        <h3 class="text-2xl font-semibold mt-6">Course Materials</h3>
+        <ul class="list-disc pl-6">
+            {% for material in lesson.course_materials.all %}
+                <li>
+                    <a href="{{ material.file.url }}" class="text-blue-600 hover:underline">{{ material.title }}</a>
+                </li>
+            {% empty %}
+                <li class="text-gray-500 italic">No course materials linked to this lesson.</li>
+            {% endfor %}
+        </ul>
+        {% if is_teacher %}
+            <h3 class="text-2xl font-semibold mt-6">Questions</h3>
+            <a href="{% url 'add_question' lesson.id %}"
+               class="inline-block mb-4 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 ease-in-out">
+                Add New Question
+            </a>
+            <ul class="list-disc pl-6">
+                {% for question in lesson.questions.all %}
+                    <li class="mb-2">
+                        {{ question.get_question_type_display }}: {{ question.question_text }}
+                        <a href="{% url 'edit_question' question.id %}"
+                           class="text-blue-500 hover:underline ml-4">Edit</a> |
+                        <a href="{% url 'delete_question' question.id %}"
+                           class="text-red-500 hover:underline ml-2">Delete</a>
+                    </li>
+                {% empty %}
+                    <li class="text-gray-500 italic">No questions added yet.</li>
+                {% endfor %}
+            </ul>
+            <!-- Update Lesson Button -->
+            <a href="{% url 'update_lesson' classroom_slug=lesson.classroom.slug lesson_id=lesson.id %}"
+               class="inline-block mt-4 px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-300 ease-in-out">
+                Update Lesson
+            </a>
+        {% endif %}
+    </div>
+{% endblock content %}

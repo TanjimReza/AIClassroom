@@ -1,0 +1,39 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">Manage Content for {{ classroom.name }}</h2>
+        <a href="{% url 'upload_material' slug=classroom.slug %}"
+           class="inline-block mb-4 px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 ease-in-out">
+            Add New Content
+        </a>
+        <table class="min-w-full bg-white">
+            <thead>
+                <tr>
+                    <th class="py-2 px-4 border-b">Title</th>
+                    <th class="py-2 px-4 border-b">Type</th>
+                    <th class="py-2 px-4 border-b">Uploaded At</th>
+                    <th class="py-2 px-4 border-b">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for material in course_materials %}
+                    <tr>
+                        <td class="py-2 px-4 border-b">{{ material.title }}</td>
+                        <td class="py-2 px-4 border-b">{{ material.file.url|slice:"-3:"|upper }}</td>
+                        <!-- Assuming the file extension indicates type -->
+                        <td class="py-2 px-4 border-b">{{ material.uploaded_at|date:"Y-m-d H:i" }}</td>
+                        <td class="py-2 px-4 border-b">
+                            <a href="{% url 'edit_course_material' classroom_slug=classroom.slug pk=material.pk %}"
+                               class="text-blue-500 hover:underline">Edit</a>
+                            <a href="{% url 'delete_course_material' classroom_slug=classroom.slug pk=material.pk %}"
+                               class="text-red-500 hover:underline">Delete</a>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="4" class="py-4 text-center text-gray-500">No content available for this classroom.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
