@@ -1,0 +1,15 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">Confirm Delete</h2>
+        <p>Are you sure you want to delete "{{ material.title }}"?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300 ease-in-out">
+                Yes, delete
+            </button>
+            <a href="{% url 'classroom_content_management' classroom_slug=material.classroom.slug %}"
+               class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-300 ease-in-out ml-2">Cancel</a>
+        </form>
+    </div>
+{% endblock %}

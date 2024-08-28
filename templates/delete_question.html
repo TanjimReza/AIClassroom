@@ -1,0 +1,15 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold mb-4">Delete Question from {{ lesson.title }}</h2>
+        <p>Are you sure you want to delete this question?</p>
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-4 py-2 bg-red-500 text-white font-semibold rounded-lg hover:bg-red-600 transition duration-300 ease-in-out">
+                Yes, Delete
+            </button>
+            <a href="{% url 'lesson_detail' classroom_slug=lesson.classroom.slug lesson_id=lesson.id %}"
+               class="px-4 py-2 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition duration-300 ease-in-out ml-4">Cancel</a>
+        </form>
+    </div>
+{% endblock content %}
