@@ -218,6 +218,28 @@ def create_lesson(request, classroom_slug):
 
 
 @login_required
+def update_lesson(request, classroom_slug, lesson_id):
+    classroom = get_object_or_404(Classroom, slug=classroom_slug)
+    lesson = get_object_or_404(Lesson, id=lesson_id, classroom=classroom)
+
+    if request.method == "POST":
+        form = LessonForm(request.POST, instance=lesson, classroom=classroom)
+        if form.is_valid():
+            lesson = form.save(commit=False)
+            lesson.classroom = classroom
+            lesson.created_by = request.user
+            lesson.save()
+            form.save_m2m()  # Save many-to-many relationships
+            # return redirect("classroom_detail", slug=classroom.slug)
+            # redirect to the lesson detail page
+            return redirect("lesson_detail", classroom_slug=classroom.slug, lesson_id=lesson.id)
+    else:
+        form = LessonForm(instance=lesson, classroom=classroom)
+
+    return render(request, "update_lesson.html", {"form": form, "classroom": classroom, "lesson": lesson})
+
+
+@login_required
 def classroom_content_management(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
 

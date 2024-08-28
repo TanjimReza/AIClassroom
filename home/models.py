@@ -268,7 +268,7 @@ class Lesson(models.Model):
         return f"{self.title} ({self.classroom.name})"
 
     class Meta:
-        unique_together = ("classroom", "title")  # Ensure lessons within the same classroom have unique titles
+        unique_together = ("classroom", "title")
 
 
 class Question(models.Model):
