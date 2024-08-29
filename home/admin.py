@@ -156,7 +156,6 @@ admin.site.register(FocusLossLog)
 admin.site.register(ExamSession)
 admin.site.register(ExamAnswer)
 
-
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
     list_display = ["title", "classroom", "created_by", "created_at", "exam_id"]

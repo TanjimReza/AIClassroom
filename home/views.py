@@ -26,9 +26,6 @@ from django.utils import timezone
 
 from .forms import *
 
-# from .models import *
-
-
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
     authentication_form = CustomLoginForm
@@ -555,12 +552,12 @@ def create_exam(request, classroom_slug):
             exam.classroom = classroom
             exam.created_by = request.user
             exam.save()
-            form.save_m2m()
-            render(request, "exams/exam_detail.html", {"exam": exam})
+            form.save_m2m()  
+            render(request, 'exams/exam_detail.html', {'exam': exam})
     else:
         form = ExamForm(classroom=classroom)
-    return render(request, "exams/create_exam.html", {"form": form, "classroom": classroom})
-
+    return render(request, 'exams/create_exam.html', {'form': form, 'classroom': classroom})
+            
 
 @login_required
 def exam_detail(request, exam_id):
@@ -582,22 +579,22 @@ def exam_detail(request, exam_id):
         # If session exists, redirect to the session
         return redirect(session.get_absolute_url())
 
-    return render(request, "exams/exam_detail.html", {"exam": exam})
+    return render(request, 'exams/exam_detail.html', {'exam': exam})
 
 
 @login_required
 def take_exam(request, exam_id):
     exam = get_object_or_404(Exam, exam_id=exam_id)
-
-    if request.method == "POST":
+    if request.method == 'POST':
         form = ExamSubmissionForm(request.POST, exam=exam)
         if form.is_valid():
             form.save()
-            return redirect("exam_result", exam_id=exam.id)
+            return redirect('exam_result', exam_id=exam.id)
     else:
         form = ExamSubmissionForm(exam=exam)
 
-    return render(request, "exams/take_exam.html", {"form": form, "exam": exam})
+    return render(request, 'exams/take_exam.html', {'form': form, 'exam': exam})
+
 
 
 @login_required
@@ -610,19 +607,25 @@ def exam_session(request, session_token):
     countdown = timer - (timezone.now() - session.started_at).seconds
 
     if session.completed_at:
-        return render(request, "exams/exam_completed.html", {"session": session, "questions": questions})
+        return render(request, 'exams/exam_completed.html', {'session': session, 'questions': questions})
 
-    if request.method == "POST":
+    if request.method == 'POST':
+
         form = ExamSubmissionForm(request.POST, exam=session.exam)
         if form.is_valid():
             # Process the submitted answers
             for question in questions:
-                answer_text = form.cleaned_data.get(f"question_{question.id}")
+                answer_text = form.cleaned_data.get(f'question_{question.id}')
                 if answer_text is not None:
-                    ExamAnswer.objects.create(session=session, question=question, text_answer=answer_text, student=request.user)
+                    ExamAnswer.objects.create(
+                        session=session,
+                        question=question,
+                        text_answer=answer_text,
+                        student = request.user
+                    )
             session.completed_at = timezone.now()
             session.save()
-            return redirect("exam_completed", session_token=session.session_token)
+            return redirect('exam_completed', session_token=session.session_token)
     else:
         form = ExamSubmissionForm(exam=session.exam)
 
@@ -636,26 +639,26 @@ from .models import ExamSession, WebcamCapture, FocusLossLog
 import base64, json
 from django.core.files.base import ContentFile
 
-
 @require_POST
 def capture_image(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     data = json.loads(request.body)
-    image_data = data.get("image")
+    image_data = data.get('image')
 
     # Decode the base64 image
-    format, imgstr = image_data.split(";base64,")
-    ext = format.split("/")[-1]
-    image = ContentFile(base64.b64decode(imgstr), name=f"{session.student.id}_{session.exam.id}.{ext}")
+    format, imgstr = image_data.split(';base64,') 
+    ext = format.split('/')[-1] 
+    image = ContentFile(base64.b64decode(imgstr), name=f'{session.student.id}_{session.exam.id}.{ext}')
 
     # Save the image in the WebcamCapture model
     WebcamCapture.objects.create(session=session, image=image)
-
-    return JsonResponse({"status": "success"})
+    
+    return JsonResponse({'status': 'success'})
 
 
 @require_POST
 def log_focus_loss(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     FocusLossLog.objects.create(session=session)
-    return JsonResponse({"status": "logged"})
+    return JsonResponse({'status': 'logged'})
+
