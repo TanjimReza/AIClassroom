@@ -1,0 +1,13 @@
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">Generate AI Questions for {{ lesson.title }}</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit"
+                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Generate Questions
+            </button>
+        </form>
+    </div>
+{% endblock content %}

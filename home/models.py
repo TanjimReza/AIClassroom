@@ -8,6 +8,7 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
+from django.core.files.storage import default_storage
 
 
 class CustomUserManager(BaseUserManager):
@@ -204,25 +205,25 @@ def classroom_directory_path(instance, filename):
     return os.path.join(f"{instance.classroom.name}_contents", filename)
 
 
-def classroom_directory_path(instance, filename):
-    # File will be uploaded to MEDIA_ROOT/coursename_contents/<filename>
-    return os.path.join(f"{instance.classroom.name}_contents", filename)
-
-
 from django.core.files.storage import default_storage
 
 
 class CourseMaterial(models.Model):
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to=classroom_directory_path)
-    course_material_url = models.URLField(max_length=500, blank=True, null=True)
+    course_material_url = models.URLField(max_length=500, blank=True, editable=False, null=True)
     description = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="materials")
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def save(self, *args, **kwargs):
-        self.course_material_url = default_storage.url(self.file.name)
+        # Generate the relative URL based on classroom and filename
+        relative_path = classroom_directory_path(self, os.path.basename(self.file.name))
+        self.course_material_url = default_storage.url(relative_path)
+
+        # Construct the full public URL (if needed)
+        # self.public_url = f"{settings.SITE_URL}{self.course_material_url}"
 
         existing_material = CourseMaterial.objects.filter(classroom=self.classroom, course_material_url=self.course_material_url).first()
 
@@ -231,15 +232,24 @@ class CourseMaterial(models.Model):
             default_storage.delete(existing_material.file.path)
             existing_material.delete()
 
+        # Now save the new entry with the correct URL
         super(CourseMaterial, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         if self.file:
             file_path = self.file.path
             if os.path.exists(file_path):
+                print("Deleting file from disk")
                 os.remove(file_path)
+                if not os.path.exists(file_path):
+                    print("File deletion successful")
+                else:
+                    print("File deletion failed")
 
         super(CourseMaterial, self).delete(*args, **kwargs)
+
+    def get_full_url(self, site=settings.SITE_URL):
+        return f"{site}{self.course_material_url}"
 
     def __str__(self):
         return f"{self.title} ({self.classroom.name})"
@@ -263,7 +273,7 @@ class Lesson(models.Model):
         return f"{self.title} ({self.classroom.name})"
 
     class Meta:
-        unique_together = ("classroom", "title")  # Ensure lessons within the same classroom have unique titles
+        unique_together = ("classroom", "title")
 
 
 class Question(models.Model):
