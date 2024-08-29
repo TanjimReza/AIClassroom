@@ -313,6 +313,7 @@ class Exam(models.Model):
     lessons = models.ManyToManyField('Lesson', related_name='exams', blank=True)
     question_count = models.IntegerField(default=0)
     
+
     def get_questions(self):
         return Question.objects.filter(lesson__in=self.lessons.all())
 
@@ -342,6 +343,17 @@ class WebcamCapture(models.Model):
 
 class FocusLossLog(models.Model):
     session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='focus_logs')
+    return reverse("exam_session", kwargs={"session_token": self.session_token})
+
+
+class WebcamCapture(models.Model):
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name="captures")
+    image = models.ImageField(upload_to="webcam_captures/")
+    captured_at = models.DateTimeField(auto_now_add=True)
+
+
+class FocusLossLog(models.Model):
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name="focus_logs")
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
@@ -355,5 +367,3 @@ class ExamAnswer(models.Model):
 
     def __str__(self):
         return f"Answer by {self.student.email} to {self.question}"
-
-

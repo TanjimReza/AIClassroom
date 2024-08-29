@@ -240,6 +240,7 @@ class ExamForm(forms.ModelForm):
             self.fields['lessons'].queryset = Lesson.objects.filter(classroom=classroom) 
 
 
+
 class ExamSubmissionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         exam = kwargs.pop('exam')
@@ -259,5 +260,6 @@ class ExamSubmissionForm(forms.Form):
                 self.fields[field_name] = forms.CharField()
             else:
                 raise ValueError(f'Invalid question type: {question.question_type}')
+
 
 

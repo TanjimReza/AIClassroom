@@ -1,53 +1,66 @@
 <!-- exam_session.html -->
 {% block content %}
-<div class="container mt-4">
-    <h2>Exam Session: {{ session.exam.title }}</h2>
-
-    <!-- Webcam Preview -->
-    <div id="webcam-container">
-        <video id="webcam" autoplay></video>
-    </div>
-
-    <p><strong>Started At:</strong> {{ session.started_at }}</p>
-    <p><strong>Time Remaining:</strong> <span id="countdown">{{ countdown }}</span></p>
-
-    <form method="post">
-        {% csrf_token %}
-        {% for question in questions %}
-        <div class="mb-4">
-            <h5>{{ question.question_text }}</h5>
-            {% if question.question_type == 'multiple_choice' %}
-                {% for opt in question.choices.splitlines %}
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ opt }}" id="opt{{ forloop.counter }}">
-                        <label class="form-check-label" for="opt{{ forloop.counter }}">{{ opt }}</label>
-                    </div>
-                {% endfor %}
-            {% elif question.question_type == 'true_false' %}
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="True" id="true{{ question.id }}">
-                    <label class="form-check-label" for="true{{ question.id }}">True</label>
-                </div>
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="False" id="false{{ question.id }}">
-                    <label class="form-check-label" for="false{{ question.id }}">False</label>
-                </div>
-            {% elif question.question_type == 'short_answer' or question.question_type == 'long_answer' %}
-                {% if question.question_type == 'short_answer' %}
-                    <textarea class="form-control" name="question_{{ question.id }}" rows="3"></textarea>
-                {% else %}
-                    <textarea class="form-control" name="question_{{ question.id }}" rows="5"></textarea>
-                {% endif %}
-            {% elif question.question_type == 'fill_in_the_blank' %}
-                <input type="text" class="form-control" name="question_{{ question.id }}">
-            {% endif %}
+    <div class="container mt-4">
+        <h2>Exam Session: {{ session.exam.title }}</h2>
+        <!-- Webcam Preview -->
+        <div id="webcam-container">
+            <video id="webcam" autoplay>
+            </video>
         </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Submit Exam</button>
-    </form>
-</div>
-
-<script>
+        <p>
+            <strong>Started At:</strong> {{ session.started_at }}
+        </p>
+        <p>
+            <strong>Time Remaining:</strong> <span id="countdown">{{ countdown }}</span>
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            {% for question in questions %}
+                <div class="mb-4">
+                    <h5>{{ question.question_text }}</h5>
+                    {% if question.question_type == 'multiple_choice' %}
+                        {% for opt in question.choices.splitlines %}
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="question_{{ question.id }}"
+                                       value="{{ opt }}"
+                                       id="opt{{ forloop.counter }}">
+                                <label class="form-check-label" for="opt{{ forloop.counter }}">{{ opt }}</label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.question_type == 'true_false' %}
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="question_{{ question.id }}"
+                                   value="True"
+                                   id="true{{ question.id }}">
+                            <label class="form-check-label" for="true{{ question.id }}">True</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input"
+                                   type="radio"
+                                   name="question_{{ question.id }}"
+                                   value="False"
+                                   id="false{{ question.id }}">
+                            <label class="form-check-label" for="false{{ question.id }}">False</label>
+                        </div>
+                    {% elif question.question_type == 'short_answer' or question.question_type == 'long_answer' %}
+                        {% if question.question_type == 'short_answer' %}
+                            <textarea class="form-control" name="question_{{ question.id }}" rows="3"></textarea>
+                        {% else %}
+                            <textarea class="form-control" name="question_{{ question.id }}" rows="5"></textarea>
+                        {% endif %}
+                    {% elif question.question_type == 'fill_in_the_blank' %}
+                        <input type="text" class="form-control" name="question_{{ question.id }}">
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Submit Exam</button>
+        </form>
+    </div>
+    <script>
     const video = document.getElementById('webcam');
 
     // Access the webcam
@@ -127,6 +140,8 @@
             event.preventDefault();
         }
     });
-</script>
+
+
+  </script>
 
 {% endblock %}

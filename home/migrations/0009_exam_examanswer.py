@@ -57,6 +57,7 @@ class Migration(migrations.Migration):
                     models.ManyToManyField(
                         blank=True, related_name="exams", to="home.lesson"
                     ),
+
                 ),
             ],
         ),

@@ -25,8 +25,6 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 
 from .forms import *
-# from .models import *
-
 
 class CustomLoginView(LoginView):
     template_name = "registration/login.html"
@@ -547,7 +545,7 @@ def generate_ai_questions(request, classroom_slug, lesson_id):
 @login_required
 def create_exam(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ExamForm(request.POST, classroom=classroom)
         if form.is_valid():
             exam = form.save(commit=False)
@@ -559,22 +557,22 @@ def create_exam(request, classroom_slug):
     else:
         form = ExamForm(classroom=classroom)
     return render(request, 'exams/create_exam.html', {'form': form, 'classroom': classroom})
-
+            
 
 @login_required
 def exam_detail(request, exam_id):
     exam = get_object_or_404(Exam, exam_id=exam_id)
-    
+
     # Check if the exam is within the valid time window
     if not (exam.start_time <= timezone.now() <= exam.end_time):
-        return render(request, 'exams/exam_not_available.html', {'exam': exam})
+        return render(request, "exams/exam_not_available.html", {"exam": exam})
 
     # Check if the student has already started this exam
     session = ExamSession.objects.filter(exam=exam, student=request.user).first()
 
     if not session:
         # If no session exists, create one
-        if request.method == 'POST':
+        if request.method == "POST":
             session = ExamSession.objects.create(exam=exam, student=request.user)
             return redirect(session.get_absolute_url())
     else:
@@ -587,7 +585,6 @@ def exam_detail(request, exam_id):
 @login_required
 def take_exam(request, exam_id):
     exam = get_object_or_404(Exam, exam_id=exam_id)
-
     if request.method == 'POST':
         form = ExamSubmissionForm(request.POST, exam=exam)
         if form.is_valid():
@@ -597,6 +594,7 @@ def take_exam(request, exam_id):
         form = ExamSubmissionForm(exam=exam)
 
     return render(request, 'exams/take_exam.html', {'form': form, 'exam': exam})
+
 
 
 @login_required
@@ -612,6 +610,7 @@ def exam_session(request, session_token):
         return render(request, 'exams/exam_completed.html', {'session': session, 'questions': questions})
 
     if request.method == 'POST':
+
         form = ExamSubmissionForm(request.POST, exam=session.exam)
         if form.is_valid():
             # Process the submitted answers
@@ -631,12 +630,7 @@ def exam_session(request, session_token):
         form = ExamSubmissionForm(exam=session.exam)
 
     # If the session is ongoing
-    return render(request, 'exams/exam_session.html', {
-        'session': session,
-        'questions': questions,
-        'form': form,
-        'countdown': countdown
-    })
+    return render(request, "exams/exam_session.html", {"session": session, "questions": questions, "form": form, "countdown": countdown})
 
 
 from django.views.decorators.http import require_POST
@@ -661,8 +655,10 @@ def capture_image(request, session_token):
     
     return JsonResponse({'status': 'success'})
 
+
 @require_POST
 def log_focus_loss(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     FocusLossLog.objects.create(session=session)
     return JsonResponse({'status': 'logged'})
+
