@@ -11,8 +11,7 @@ from .models import Lesson, Question
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from .forms import LessonForm
-from .models import Lesson, Classroom
-from .models import Classroom
+from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users, Lesson, CourseMaterial, Question, Exam, ExamAnswer, ExamSession
 from .forms import CourseMaterialForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
@@ -25,8 +24,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils import timezone
 
-from .forms import ClassroomForm, CustomLoginForm, CustomPasswordResetForm, InvitationForm, StudentRegistrationForm
-from .models import *
+from .forms import *
+
+# from .models import *
 
 
 class CustomLoginView(LoginView):
@@ -543,3 +543,119 @@ def generate_ai_questions(request, classroom_slug, lesson_id):
         form = GenerateAIQuestionsForm()
 
     return render(request, "generate_ai_questions.html", {"form": form, "lesson": lesson})
+
+
+@login_required
+def create_exam(request, classroom_slug):
+    classroom = get_object_or_404(Classroom, slug=classroom_slug)
+    if request.method == "POST":
+        form = ExamForm(request.POST, classroom=classroom)
+        if form.is_valid():
+            exam = form.save(commit=False)
+            exam.classroom = classroom
+            exam.created_by = request.user
+            exam.save()
+            form.save_m2m()
+            render(request, "exams/exam_detail.html", {"exam": exam})
+    else:
+        form = ExamForm(classroom=classroom)
+    return render(request, "exams/create_exam.html", {"form": form, "classroom": classroom})
+
+
+@login_required
+def exam_detail(request, exam_id):
+    exam = get_object_or_404(Exam, exam_id=exam_id)
+
+    # Check if the exam is within the valid time window
+    if not (exam.start_time <= timezone.now() <= exam.end_time):
+        return render(request, "exams/exam_not_available.html", {"exam": exam})
+
+    # Check if the student has already started this exam
+    session = ExamSession.objects.filter(exam=exam, student=request.user).first()
+
+    if not session:
+        # If no session exists, create one
+        if request.method == "POST":
+            session = ExamSession.objects.create(exam=exam, student=request.user)
+            return redirect(session.get_absolute_url())
+    else:
+        # If session exists, redirect to the session
+        return redirect(session.get_absolute_url())
+
+    return render(request, "exams/exam_detail.html", {"exam": exam})
+
+
+@login_required
+def take_exam(request, exam_id):
+    exam = get_object_or_404(Exam, exam_id=exam_id)
+
+    if request.method == "POST":
+        form = ExamSubmissionForm(request.POST, exam=exam)
+        if form.is_valid():
+            form.save()
+            return redirect("exam_result", exam_id=exam.id)
+    else:
+        form = ExamSubmissionForm(exam=exam)
+
+    return render(request, "exams/take_exam.html", {"form": form, "exam": exam})
+
+
+@login_required
+def exam_session(request, session_token):
+    session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
+
+    # Handle exam logic here, e.g., displaying questions, tracking time, etc.
+    questions = session.exam.get_questions()
+    timer = session.exam.duration_minutes * 60  # Convert duration to seconds
+    countdown = timer - (timezone.now() - session.started_at).seconds
+
+    if session.completed_at:
+        return render(request, "exams/exam_completed.html", {"session": session, "questions": questions})
+
+    if request.method == "POST":
+        form = ExamSubmissionForm(request.POST, exam=session.exam)
+        if form.is_valid():
+            # Process the submitted answers
+            for question in questions:
+                answer_text = form.cleaned_data.get(f"question_{question.id}")
+                if answer_text is not None:
+                    ExamAnswer.objects.create(session=session, question=question, text_answer=answer_text, student=request.user)
+            session.completed_at = timezone.now()
+            session.save()
+            return redirect("exam_completed", session_token=session.session_token)
+    else:
+        form = ExamSubmissionForm(exam=session.exam)
+
+    # If the session is ongoing
+    return render(request, "exams/exam_session.html", {"session": session, "questions": questions, "form": form, "countdown": countdown})
+
+
+from django.views.decorators.http import require_POST
+from django.http import JsonResponse
+from .models import ExamSession, WebcamCapture, FocusLossLog
+import base64, json
+from django.core.files.base import ContentFile
+
+
+@require_POST
+def capture_image(request, session_token):
+    session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
+    data = json.loads(request.body)
+    image_data = data.get("image")
+
+    # Decode the base64 image
+    format, imgstr = image_data.split(";base64,")
+    ext = format.split("/")[-1]
+    image = ContentFile(base64.b64decode(imgstr), name=f"{session.student.id}_{session.exam.id}.{ext}")
+
+    # Save the image in the WebcamCapture model
+    WebcamCapture.objects.create(session=session, image=image)
+
+    return JsonResponse({"status": "success"})
+
+
+@require_POST
+def log_focus_loss(request, session_token):
+    session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
+    FocusLossLog.objects.create(session=session)
+    return JsonResponse({"status": "logged"})
