@@ -1,4 +1,3 @@
-
 {% block content %}
     <div class="container mt-4">
         <h2>{{ exam.title }}</h2>
@@ -26,4 +25,4 @@
         <a href="{% url 'classroom_detail' exam.classroom.slug %}"
            class="btn btn-secondary mt-3">Back to Classroom</a>
     </div>
-{% endblock %}
+{% endblock content %}
