@@ -199,7 +199,6 @@ class Invitation(models.Model):
 
 import os
 
-
 def classroom_directory_path(instance, filename):
     # File will be uploaded to MEDIA_ROOT/coursename_contents/<filename>
     return os.path.join(f"{instance.classroom.name}_contents", filename)
@@ -223,10 +222,8 @@ class CourseMaterial(models.Model):
     uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True)
 
     def save(self, *args, **kwargs):
-        # Generate the full URL of the material
         self.course_material_url = default_storage.url(self.file.name)
 
-        # Check if a file with the same URL already exists
         existing_material = CourseMaterial.objects.filter(classroom=self.classroom, course_material_url=self.course_material_url).first()
 
         if existing_material:
@@ -234,11 +231,9 @@ class CourseMaterial(models.Model):
             default_storage.delete(existing_material.file.path)
             existing_material.delete()
 
-        # Now save the new entry
         super(CourseMaterial, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
-        # Ensure the file is deleted from storage when the instance is deleted
         if self.file:
             file_path = self.file.path
             if os.path.exists(file_path):
@@ -291,3 +286,64 @@ class Question(models.Model):
 
     def __str__(self):
         return f"{self.get_question_type_display()} - {self.question_text[:50]}"
+
+
+class Exam(models.Model):
+    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='exams')
+    exam_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+    duration_minutes = models.IntegerField(help_text="Duration in minutes")
+    is_published = models.BooleanField(default=False)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_exams')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    lessons = models.ManyToManyField('Lesson', related_name='exams', blank=True)
+    question_count = models.IntegerField(default=0)
+    
+    def get_questions(self):
+        return Question.objects.filter(lesson__in=self.lessons.all())
+
+    def __str__(self):
+        return f"{self.title} - {self.classroom.name}"
+
+
+class ExamSession(models.Model):
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='sessions')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_sessions')
+    session_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    score = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Session {self.session_token} for {self.exam.title} by {self.student.get_full_name()}"
+
+    def get_absolute_url(self):
+        return reverse('exam_session', kwargs={'session_token': self.session_token})
+
+
+class WebcamCapture(models.Model):
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='captures')
+    image = models.ImageField(upload_to='webcam_captures/')
+    captured_at = models.DateTimeField(auto_now_add=True)
+
+class FocusLossLog(models.Model):
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='focus_logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class ExamAnswer(models.Model):
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='answers')
+    text_answer = models.TextField(blank=True, null=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    marks_obtained = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Answer by {self.student.email} to {self.question}"
+
+

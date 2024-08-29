@@ -4,7 +4,7 @@ from .models import CourseMaterial
 from django import forms
 from django.contrib.auth.forms import AuthenticationForm, PasswordResetForm, UserCreationForm
 
-from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users
+from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users, Lesson, CourseMaterial, Question, Exam, ExamAnswer
 
 
 class CustomLoginForm(AuthenticationForm):
@@ -220,3 +220,48 @@ class QuestionForm(forms.ModelForm):
                 self.add_error("choices", "Please provide at least two choices for a multiple choice question.")
 
         return cleaned_data
+
+
+class ExamForm(forms.ModelForm):
+    lessons = forms.ModelMultipleChoiceField(
+        queryset=Lesson.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        required=False
+    )
+
+    class Meta:
+        model = Exam
+        fields = ['title', 'description', 'start_time', 'end_time', 'duration_minutes', 'lessons']
+        widgets = {
+            'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        classroom = kwargs.pop('classroom', None)
+        super().__init__(*args, **kwargs)
+        if classroom:
+            self.fields['lessons'].queryset = Lesson.objects.filter(classroom=classroom) 
+
+
+class ExamSubmissionForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        exam = kwargs.pop('exam')
+        super().__init__(*args, **kwargs)
+
+        for question in exam.get_questions():
+            field_name = f'question_{question.id}'
+            if question.question_type == 'multiple_choice':
+                self.fields[field_name] = forms.ChoiceField(choices=[(opt, opt) for opt in question.choices.splitlines()], widget=forms.RadioSelect)
+            elif question.question_type == 'true_false':
+                self.fields[field_name] = forms.ChoiceField(choices=[('True', 'True'), ('False', 'False')], widget=forms.RadioSelect)
+            elif question.question_type == 'short_answer':
+                self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}))
+            elif question.question_type == 'long_answer':
+                self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 5}))
+            elif question.question_type == 'fill_in_the_blank':
+                self.fields[field_name] = forms.CharField()
+            else:
+                raise ValueError(f'Invalid question type: {question.question_type}')
+
+

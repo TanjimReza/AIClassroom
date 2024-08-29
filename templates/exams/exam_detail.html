@@ -1,0 +1,22 @@
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ exam.title }}</h2>
+    <p>{{ exam.description }}</p>
+    <p><strong>Start Time:</strong> {{ exam.start_time }}</p>
+    <p><strong>End Time:</strong> {{ exam.end_time }}</p>
+    <p><strong>Duration:</strong> {{ exam.duration_minutes }} minutes</p>
+    <p><strong>Number of Questions:</strong> {{ exam.question_count }}</p>
+
+    {% if not session %}
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-primary">Start Exam</button>
+    </form>
+    {% else %}
+    <a href="{{ session.get_absolute_url }}" class="btn btn-primary">Continue Exam</a>
+    {% endif %}
+    
+    <a href="{% url 'classroom_detail' exam.classroom.slug %}" class="btn btn-secondary mt-3">Back to Classroom</a>
+</div>
+{% endblock %}

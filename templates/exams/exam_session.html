@@ -1,0 +1,132 @@
+<!-- exam_session.html -->
+{% block content %}
+<div class="container mt-4">
+    <h2>Exam Session: {{ session.exam.title }}</h2>
+
+    <!-- Webcam Preview -->
+    <div id="webcam-container">
+        <video id="webcam" autoplay></video>
+    </div>
+
+    <p><strong>Started At:</strong> {{ session.started_at }}</p>
+    <p><strong>Time Remaining:</strong> <span id="countdown">{{ countdown }}</span></p>
+
+    <form method="post">
+        {% csrf_token %}
+        {% for question in questions %}
+        <div class="mb-4">
+            <h5>{{ question.question_text }}</h5>
+            {% if question.question_type == 'multiple_choice' %}
+                {% for opt in question.choices.splitlines %}
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ opt }}" id="opt{{ forloop.counter }}">
+                        <label class="form-check-label" for="opt{{ forloop.counter }}">{{ opt }}</label>
+                    </div>
+                {% endfor %}
+            {% elif question.question_type == 'true_false' %}
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="True" id="true{{ question.id }}">
+                    <label class="form-check-label" for="true{{ question.id }}">True</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="False" id="false{{ question.id }}">
+                    <label class="form-check-label" for="false{{ question.id }}">False</label>
+                </div>
+            {% elif question.question_type == 'short_answer' or question.question_type == 'long_answer' %}
+                {% if question.question_type == 'short_answer' %}
+                    <textarea class="form-control" name="question_{{ question.id }}" rows="3"></textarea>
+                {% else %}
+                    <textarea class="form-control" name="question_{{ question.id }}" rows="5"></textarea>
+                {% endif %}
+            {% elif question.question_type == 'fill_in_the_blank' %}
+                <input type="text" class="form-control" name="question_{{ question.id }}">
+            {% endif %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Submit Exam</button>
+    </form>
+</div>
+
+<script>
+    const video = document.getElementById('webcam');
+
+    // Access the webcam
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+            video.srcObject = stream;
+        })
+        .catch(error => {
+            console.error("Webcam access denied", error);
+        });
+
+    // Function to capture an image from the video stream
+    function captureImage() {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        const context = canvas.getContext('2d');
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // Convert the captured image to a data URL
+        const dataUrl = canvas.toDataURL('image/png');
+
+        // Send the image to the server
+        fetch("{% url 'capture_image' session.session_token %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ image: dataUrl })
+        });
+    }
+
+    // Capture an image every 60 seconds
+    setInterval(captureImage, 60000);
+
+    // Countdown timer
+    function startCountdown(duration) {
+        let timer = duration, minutes, seconds;
+        setInterval(function () {
+            minutes = parseInt(timer / 60, 10);
+            seconds = parseInt(timer % 60, 10);
+
+            minutes = minutes < 10 ? "0" + minutes : minutes;
+            seconds = seconds < 10 ? "0" + seconds : seconds;
+
+            document.getElementById('countdown').textContent = minutes + ":" + seconds;
+
+            if (--timer < 0) {
+                timer = 0;
+                alert("Time is up!");
+                document.querySelector('form').submit();
+            }
+        }, 1000);
+    }
+
+    // Start the countdown
+    startCountdown({{ countdown }});
+
+    // Detect when the exam page loses focus (student switches tabs)
+    window.onblur = function() {
+        alert("You are not allowed to switch tabs during the exam!");
+        
+        // Log the event (Optional)
+        fetch("{% url 'log_focus_loss' session.session_token %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        });
+    };
+
+    // Prevent right-click and key combinations like Ctrl+S, Ctrl+C, Ctrl+V
+    document.addEventListener('contextmenu', event => event.preventDefault());
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey || event.key === 'F12' || event.key === 'PrintScreen') {
+            event.preventDefault();
+        }
+    });
+</script>
+
+{% endblock %}

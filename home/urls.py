@@ -30,4 +30,11 @@ urlpatterns = [
     path("lesson/<int:lesson_id>/question/add/", views.add_question, name="add_question"),
     path("question/<int:question_id>/edit/", views.edit_question, name="edit_question"),
     path("question/<int:question_id>/delete/", views.delete_question, name="delete_question"),
+    path('classroom/<slug:classroom_slug>/create_exam/', views.create_exam, name='create_exam'),
+    path('exam/<str:exam_id>/take/', views.take_exam, name='take_exam'),
+    path('exam/<str:exam_id>/', views.exam_detail, name='exam_detail'),
+    path('exam/session/<uuid:session_token>/', views.exam_session, name='exam_session'),
+    path('exam/session/<uuid:session_token>/capture-image/', views.capture_image, name='capture_image'),
+    path('exam/session/<uuid:session_token>/log-focus-loss/', views.log_focus_loss, name='log_focus_loss'),
+    
 ]
