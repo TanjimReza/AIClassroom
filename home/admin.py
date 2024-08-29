@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
-from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users
+from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users, Lesson, Exam, ExamSession, WebcamCapture, FocusLossLog, ExamAnswer
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -151,6 +151,19 @@ class ClassroomAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Invitation)
+admin.site.register(WebcamCapture)
+admin.site.register(FocusLossLog)
+admin.site.register(ExamSession)
+admin.site.register(ExamAnswer)
+
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+    list_display = ["title", "classroom", "created_by", "created_at", "exam_id"]
+    search_fields = ["title", "classroom__name", "created_by__email"]
+    list_filter = ["classroom", "created_at"]
+    raw_id_fields = ("created_by",)
+    date_hierarchy = "created_at"
+    ordering = ("-created_at",)
 
 
 @admin.register(CourseMaterial)
