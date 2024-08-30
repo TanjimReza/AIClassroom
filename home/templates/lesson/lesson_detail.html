@@ -5,110 +5,119 @@
 {% block content %}
     <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-12">
         <!-- Lesson Header -->
-        <section class="bg-gray-900 text-white rounded-lg shadow-lg p-8">
-            <h1 class="text-4xl font-extrabold">{{ lesson.title }}</h1>
-            <p class="mt-4 text-xl">{{ lesson.objectives }}</p>
-            <p class="mt-2 text-lg text-gray-300">Deadline: {{ lesson.deadline|date:"F d, Y" }}</p>
-        </section>
-        <!-- Lesson Materials Section -->
-        <section>
-            <h2 class="text-3xl font-semibold text-gray-800 mb-6">Lesson Materials</h2>
-            <ul class="divide-y divide-gray-200">
-                {% for material in lesson.course_materials.all %}
-                    <li class="flex justify-between items-center py-4">
-                        <div class="flex-1">
-                            <h3 class="text-xl font-semibold text-gray-900">{{ material.title }}</h3>
-                            <p class="mt-1 text-gray-600">{{ material.description }}</p>
-                        </div>
-                        <div class="ml-4 flex-shrink-0">
-                            <a href="{{ material.file.url }}"
-                               class="inline-block px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow hover:bg-blue-700 transition duration-200">
-                                View Material
-                            </a>
-                        </div>
-                    </li>
-                {% endfor %}
-                {% if not lesson.course_materials.all %}
-                    <li>
-                        <p class="text-gray-500 italic py-4">No materials available for this lesson.</p>
-                    </li>
+        <section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg shadow-xl p-10">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div>
+                    <h1 class="text-5xl font-bold mb-4">{{ lesson.title }}</h1>
+                    <p class="text-xl font-light mb-4">{{ lesson.objectives }}</p>
+                    <p class="text-lg font-medium">Deadline: {{ lesson.deadline|date:"F d, Y" }}</p>
+                </div>
+                {% if is_teacher %}
+                    <div class="flex space-x-4 mt-6 md:mt-0">
+                        <a href="{% url 'add_question' lesson.id %}"
+                           class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-full shadow-lg transform transition hover:-translate-y-1 hover:scale-110 focus:ring-2 focus:ring-green-400 focus:ring-offset-2">
+                            + Add Question
+                        </a>
+                        <a href="{% url 'update_lesson' classroom_slug=lesson.classroom.slug lesson_id=lesson.id %}"
+                           class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-full shadow-lg transform transition hover:-translate-y-1 hover:scale-110 focus:ring-2 focus:ring-yellow-400 focus:ring-offset-2">
+                            Update Lesson
+                        </a>
+                        <a href="{% url 'generate_ai_questions' lesson.classroom.slug lesson.id %}"
+                           class="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-full shadow-lg transform transition hover:-translate-y-1 hover:scale-110 focus:ring-2 focus:ring-purple-400 focus:ring-offset-2">
+                            AI Questions
+                        </a>
+                    </div>
                 {% endif %}
-            </ul>
+            </div>
         </section>
         {% if is_teacher %}
-            <!-- Teacher Actions -->
+            <!-- Questions Section -->
             <section>
-                <div class="flex items-center space-x-4 mb-8">
-                    <a href="{% url 'add_question' lesson.id %}"
-                       class="inline-flex items-center px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition duration-200">
-                        <svg class="mr-2 h-5 w-5"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Add New Question
-                    </a>
-                    <a href="{% url 'update_lesson' classroom_slug=lesson.classroom.slug lesson_id=lesson.id %}"
-                       class="inline-flex items-center px-6 py-3 bg-yellow-500 text-white rounded-lg shadow hover:bg-yellow-600 transition duration-200">
-                        <svg class="mr-2 h-5 w-5"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Update Lesson
-                    </a>
-                    <a href="{% url 'generate_ai_questions' lesson.classroom.slug lesson.id %}"
-                       class="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg shadow hover:bg-purple-700 transition duration-200">
-                        <svg class="mr-2 h-5 w-5"
-                             fill="none"
-                             stroke="currentColor"
-                             viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                        </svg>
-                        Generate AI Questions
-                    </a>
-                </div>
-                <!-- Questions Section -->
-                <h2 class="text-3xl font-semibold text-gray-800 mb-6">Questions</h2>
-                <div class="space-y-6">
-                    {% for question in lesson.questions.all %}
-                        <div class="bg-gray-100 p-6 rounded-lg shadow-md flex justify-between items-center">
-                            <div class="flex items-center">
-                                <span class="text-lg text-gray-900">{{ question.get_question_type_display }}: {{ question.question_text }}</span>
-                            </div>
-                            <div class="flex space-x-4">
-                                <a href="{% url 'edit_question' question.id %}"
-                                   class="text-gray-600 hover:text-gray-900 transition">
-                                    <svg class="h-5 w-5"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M5.5 4.5l1.5 14h10l1.5-14H5.5zM5 9h14">
-                                        </path>
-                                    </svg>
-                                </a>
-                                <a href="{% url 'delete_question' question.id %}"
-                                   class="text-red-600 hover:text-red-700 transition">
-                                    <svg class="h-5 w-5"
-                                         fill="none"
-                                         stroke="currentColor"
-                                         viewBox="0 0 24 24"
-                                         xmlns="http://www.w3.org/2000/svg">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                    </svg>
-                                </a>
-                            </div>
-                        </div>
-                    {% endfor %}
-                    {% if not lesson.questions.all %}<p class="text-gray-500 italic">No questions added yet.</p>{% endif %}
+                <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Questions</h2>
+                <div class="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
+                    <table class="min-w-full bg-white">
+                        <thead>
+                            <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm">
+                                <th class="py-4 px-6">Question Type</th>
+                                <th class="py-4 px-6">Question Text</th>
+                                <th class="py-4 px-6 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-gray-800">
+                            {% for question in lesson.questions.all %}
+                                <tr class="hover:bg-gray-50 transition-colors">
+                                    <td class="py-4 px-6">{{ question.get_question_type_display }}</td>
+                                    <td class="py-4 px-6">{{ question.question_text }}</td>
+                                    <td class="py-4 px-6 text-right">
+                                        <div class="flex justify-end space-x-4">
+                                            <a href="{% url 'edit_question' question.id %}"
+                                               class="text-gray-600 hover:text-gray-900 transition">
+                                                <svg class="h-5 w-5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24"
+                                                     xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5h2M5.5 4.5l1.5 14h10l1.5-14H5.5zM5 9h14">
+                                                    </path>
+                                                </svg>
+                                            </a>
+                                            <a href="{% url 'delete_question' question.id %}"
+                                               class="text-red-600 hover:text-red-700 transition">
+                                                <svg class="h-5 w-5"
+                                                     fill="none"
+                                                     stroke="currentColor"
+                                                     viewBox="0 0 24 24"
+                                                     xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            {% if not lesson.questions.all %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-4 text-gray-500 italic">No questions added yet.</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
             </section>
         {% endif %}
+        <!-- Lesson Materials Section -->
+        <section>
+            <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Lesson Materials</h2>
+            <div class="overflow-hidden border border-gray-200 rounded-lg shadow-sm">
+                <table class="min-w-full bg-white">
+                    <thead>
+                        <tr class="bg-gray-100 text-left text-gray-600 uppercase text-sm">
+                            <th class="py-4 px-6">Material Title</th>
+                            <th class="py-4 px-6">Description</th>
+                            <th class="py-4 px-6 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-gray-800">
+                        {% for material in lesson.course_materials.all %}
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="py-4 px-6">{{ material.title }}</td>
+                                <td class="py-4 px-6">{{ material.description }}</td>
+                                <td class="py-4 px-6 text-right">
+                                    <a href="{{ material.file.url }}"
+                                       class="inline-block px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md shadow-lg transition duration-300 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+                                        View Material
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        {% if not lesson.course_materials.all %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-gray-500 italic">No materials available for this lesson.</td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 {% endblock content %}

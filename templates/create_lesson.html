@@ -1,9 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Create Lesson for {{ classroom.name }}{% endblock %}
 {% block content %}
-    <h2>Create Lesson for {{ classroom.name }}</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit" class="btn btn-primary">Save Lesson</button>
-    </form>
-    <a href="{% url 'classroom_detail' slug=classroom.slug %}">Back to Classroom</a>
-{% endblock %}
+    <div class="container mx-auto px-4 py-12">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Create Lesson for {{ classroom.name }}</h2>
+        <form method="post"
+              class="bg-white p-8 rounded-lg shadow-lg max-w-lg mx-auto space-y-6">
+            {% csrf_token %}
+            {% if form.non_field_errors %}
+                <div class="bg-red-100 text-red-700 p-4 rounded-md mb-4">
+                    <ul class="errorlist">
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div>
+                <label for="id_title" class="block text-sm font-medium text-gray-700">Title:</label>
+                <input type="text"
+                       name="title"
+                       maxlength="255"
+                       required
+                       id="id_title"
+                       class="mt-1 block w-full px-4 py-2 border {% if form.title.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                {% if form.title.errors %}
+                    <ul class="errorlist text-red-600 mt-2">
+                        {% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_description" class="block text-sm font-medium text-gray-700">Description:</label>
+                <textarea name="description"
+                          cols="40"
+                          rows="5"
+                          id="id_description"
+                          class="mt-1 block w-full px-4 py-2 border {% if form.description.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                {% if form.description.errors %}
+                    <ul class="errorlist text-red-600 mt-2">
+                        {% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_objectives" class="block text-sm font-medium text-gray-700">Objectives:</label>
+                <textarea name="objectives"
+                          cols="40"
+                          rows="5"
+                          id="id_objectives"
+                          class="mt-1 block w-full px-4 py-2 border {% if form.objectives.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"></textarea>
+                {% if form.objectives.errors %}
+                    <ul class="errorlist text-red-600 mt-2">
+                        {% for error in form.objectives.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_deadline" class="block text-sm font-medium text-gray-700">Deadline:</label>
+                <input type="date"
+                       name="deadline"
+                       id="id_deadline"
+                       class="mt-1 block w-full px-4 py-2 border {% if form.deadline.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                {% if form.deadline.errors %}
+                    <ul class="errorlist text-red-600 mt-2">
+                        {% for error in form.deadline.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div>
+                <label for="id_course_materials"
+                       class="block text-sm font-medium text-gray-700">Course Materials:</label>
+                <select name="course_materials"
+                        id="id_course_materials"
+                        multiple
+                        class="mt-1 block w-full px-4 py-2 border {% if form.course_materials.errors %}border-red-500{% else %}border-gray-300{% endif %} rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <option value="44">microvsmicro.pdf (CSE110)</option>
+                    <option value="45">11.pdf (CSE110)</option>
+                </select>
+                {% if form.course_materials.errors %}
+                    <ul class="errorlist text-red-600 mt-2">
+                        {% for error in form.course_materials.errors %}<li>{{ error }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div>
+                <button type="submit"
+                        class="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200">
+                    Save Lesson
+                </button>
+            </div>
+        </form>
+        <div class="mt-6">
+            <a href="{% url 'classroom_detail' slug=classroom.slug %}"
+               class="text-blue-600 hover:underline">Back to Classroom</a>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,13 +1,78 @@
+{% extends "base.html" %}
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <h2 class="text-2xl font-bold mb-4">Update Lesson: {{ lesson.title }}</h2>
-        <form method="post">
+    <div class="max-w-3xl mx-auto py-12 px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Update Lesson: {{ lesson.title }}</h2>
+        <form method="post" enctype="multipart/form-data" class="space-y-8">
             {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit"
-                    class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out">
-                Save Changes
-            </button>
+            {{ form.non_field_errors }}
+            <!-- Title Field -->
+            <div class="flex flex-col">
+                <label for="{{ form.title.id_for_label }}"
+                       class="text-sm font-semibold text-gray-700 mb-2">{{ form.title.label }}</label>
+                <input type="text"
+                       name="{{ form.title.name }}"
+                       value="{{ form.title.value }}"
+                       id="{{ form.title.id_for_label }}"
+                       class="w-full h-12 px-4 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 shadow-sm transition duration-200" />
+                {% for error in form.title.errors %}<p class="text-red-600 mt-1 text-xs">{{ error }}</p>{% endfor %}
+            </div>
+            <!-- Description Field -->
+            <div class="flex flex-col">
+                <label for="{{ form.description.id_for_label }}"
+                       class="text-sm font-semibold text-gray-700 mb-2">{{ form.description.label }}</label>
+                <textarea name="{{ form.description.name }}"
+                          id="{{ form.description.id_for_label }}"
+                          cols="40"
+                          rows="5"
+                          class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 shadow-sm transition duration-200">{{ form.description.value }}</textarea>
+                {% for error in form.description.errors %}<p class="text-red-600 mt-1 text-xs">{{ error }}</p>{% endfor %}
+            </div>
+            <!-- Objectives Field -->
+            <div class="flex flex-col">
+                <label for="{{ form.objectives.id_for_label }}"
+                       class="text-sm font-semibold text-gray-700 mb-2">{{ form.objectives.label }}</label>
+                <textarea name="{{ form.objectives.name }}"
+                          id="{{ form.objectives.id_for_label }}"
+                          cols="40"
+                          rows="5"
+                          class="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 shadow-sm transition duration-200">{{ form.objectives.value }}</textarea>
+                {% for error in form.objectives.errors %}
+                    <p class="text-red-600 mt-1 text-xs">{{ error }}</p>
+                {% endfor %}
+            </div>
+            <!-- Deadline Field -->
+            <div class="flex flex-col relative">
+                <label for="id_deadline" class="text-sm font-semibold text-gray-700 mb-2">Deadline</label>
+                <input id="id_deadline"
+                       name="deadline"
+                       type="date"
+                       value="{{ lesson.deadline|date:"Y-m-d" }}"
+                       class="w-full h-12 px-4 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 shadow-sm transition duration-200" />
+            </div>
+            <!-- Course Materials Field -->
+            <div class="flex flex-col">
+                <label for="{{ form.course_materials.id_for_label }}"
+                       class="text-sm font-semibold text-gray-700 mb-2">{{ form.course_materials.label }}</label>
+                <select name="{{ form.course_materials.name }}"
+                        id="{{ form.course_materials.id_for_label }}"
+                        multiple
+                        class="w-full h-40 px-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-gray-50 shadow-sm transition duration-200">
+                    {% for option in form.course_materials.field.choices %}
+                        <option value="{{ option.0 }}"
+                                {% if option.0 in form.course_materials.value %}selected{% endif %}>
+                            {{ option.1 }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {% for error in form.course_materials.errors %}<p class="text-red-600 mt-1 text-xs">{{ error }}</p>{% endfor %}
+            </div>
+            <!-- Submit Button -->
+            <div class="flex justify-end">
+                <button type="submit"
+                        class="px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg shadow-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                    Save Changes
+                </button>
+            </div>
         </form>
     </div>
 {% endblock content %}
