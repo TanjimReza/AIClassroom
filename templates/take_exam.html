@@ -1,27 +1,32 @@
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ exam.title }}</h2>
-    <p>{{ exam.description }}</p>
-
-    <form method="post">
-        {% csrf_token %}
-        {% for question in exam.questions.all %}
-            <div class="mb-4">
-                <h5>{{ question.question_text }}</h5>
-                {% if question.question_type == 'multiple_choice' %}
-                    {% for opt in question.choices.splitlines %}
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="question_{{ question.id }}" value="{{ opt }}" id="opt{{ forloop.counter }}">
-                            <label class="form-check-label" for="opt{{ forloop.counter }}">{{ opt }}</label>
-                        </div>
-                    {% endfor %}
-                {% elif question.question_type == 'text' %}
-                    <textarea class="form-control" name="question_{{ question.id }}" rows="4"></textarea>
-                {% endif %}
-            </div>
-        {% endfor %}
-        <button type="submit" class="btn btn-primary">Submit Exam</button>
-    </form>
-    <a href="{% url 'classroom_detail' exam.classroom.slug %}" class="btn btn-secondary mt-3">Back to Classroom</a>
-</div>
+    <div class="container mt-4">
+        <h2>{{ exam.title }}</h2>
+        <p>{{ exam.description }}</p>
+        <form method="post">
+            {% csrf_token %}
+            {% for question in exam.questions.all %}
+                <div class="mb-4">
+                    <h5>{{ question.question_text }}</h5>
+                    {% if question.question_type == 'multiple_choice' %}
+                        {% for opt in question.choices.splitlines %}
+                            <div class="form-check">
+                                <input class="form-check-input"
+                                       type="radio"
+                                       name="question_{{ question.id }}"
+                                       value="{{ opt }}"
+                                       id="opt{{ forloop.counter }}">
+                                <label class="form-check-label" for="opt{{ forloop.counter }}">{{ opt }}</label>
+                            </div>
+                        {% endfor %}
+                    {% elif question.question_type == 'text' %}
+                        <textarea class="form-control" name="question_{{ question.id }}" rows="4"></textarea>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">Submit Exam</button>
+        </form>
+        <a href="{% url 'classroom_detail' exam.classroom.slug %}"
+           class="btn btn-secondary mt-3">Back to Classroom</a>
+    </div>
 {% endblock %}
+

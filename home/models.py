@@ -200,6 +200,7 @@ class Invitation(models.Model):
 
 import os
 
+
 def classroom_directory_path(instance, filename):
     # File will be uploaded to MEDIA_ROOT/coursename_contents/<filename>
     return os.path.join(f"{instance.classroom.name}_contents", filename)
@@ -299,7 +300,7 @@ class Question(models.Model):
 
 
 class Exam(models.Model):
-    classroom = models.ForeignKey('Classroom', on_delete=models.CASCADE, related_name='exams')
+    classroom = models.ForeignKey("Classroom", on_delete=models.CASCADE, related_name="exams")
     exam_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -307,12 +308,12 @@ class Exam(models.Model):
     end_time = models.DateTimeField()
     duration_minutes = models.IntegerField(help_text="Duration in minutes")
     is_published = models.BooleanField(default=False)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_exams')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="created_exams")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    lessons = models.ManyToManyField('Lesson', related_name='exams', blank=True)
+    lessons = models.ManyToManyField("Lesson", related_name="exams", blank=True)
     question_count = models.IntegerField(default=0)
-    
+
     def get_questions(self):
         return Question.objects.filter(lesson__in=self.lessons.all())
 
@@ -321,8 +322,8 @@ class Exam(models.Model):
 
 
 class ExamSession(models.Model):
-    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name='sessions')
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_sessions')
+    exam = models.ForeignKey(Exam, on_delete=models.CASCADE, related_name="sessions")
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="exam_sessions")
     session_token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -332,31 +333,30 @@ class ExamSession(models.Model):
         return f"Session {self.session_token} for {self.exam.title} by {self.student.get_full_name()}"
 
     def get_absolute_url(self):
-        return reverse('exam_session', kwargs={'session_token': self.session_token})
+        return reverse("exam_session", kwargs={"session_token": self.session_token})
 
 
 class WebcamCapture(models.Model):
-    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='captures')
-    image = models.ImageField(upload_to='webcam_captures/')
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name="captures")
+    image = models.ImageField(upload_to="webcam_captures/")
     captured_at = models.DateTimeField(auto_now_add=True)
 
+
 class FocusLossLog(models.Model):
-    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='focus_logs')
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name="focus_logs")
     timestamp = models.DateTimeField(auto_now_add=True)
 
 
 class ExamAnswer(models.Model):
-    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name='answers')
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='answers')
+    session = models.ForeignKey(ExamSession, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="answers")
     text_answer = models.TextField(blank=True, null=True)
     submitted_at = models.DateTimeField(auto_now_add=True)
     marks_obtained = models.IntegerField(null=True, blank=True)
 
     def __str__(self):
         return f"Answer by {self.student.email} to {self.question}"
-
-
 class ExamSubmission(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_submissions')
     exam_session = models.OneToOneField(ExamSession, on_delete=models.CASCADE, related_name='submission')

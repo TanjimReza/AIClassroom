@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Exams Overview{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-12">
+        <h2 class="text-4xl font-bold mb-8">Exams Overview</h2>
+        <div class="tabs">
+            <!-- Tab Headers -->
+            <ul class="flex justify-center space-x-4 mb-6">
+                <li>
+                    <button id="tab1-btn"
+                            onclick="showTab('tab1')"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-md cursor-pointer hover:bg-blue-700 transition">
+                        Upcoming Exams
+                    </button>
+                </li>
+                <li>
+                    <button id="tab2-btn"
+                            onclick="showTab('tab2')"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-md cursor-pointer hover:bg-green-700 transition">
+                        Previous Exams
+                    </button>
+                </li>
+            </ul>
+            <!-- Tab Content -->
+            <div class="content">
+                <!-- Upcoming Exams Tab -->
+                <section id="tab1-content" class="tab-content">
+                    {% if upcoming_exams %}
+                        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {% for exam in upcoming_exams %}
+                                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                                    <h3 class="text-2xl font-semibold text-gray-800">{{ exam.title }}</h3>
+                                    <p class="mt-2 text-gray-600">Start Time: {{ exam.start_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
+                                    <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
+                                       class="mt-4 inline-block text-blue-600 hover:underline">View Details</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No upcoming exams.</p>
+                    {% endif %}
+                </section>
+                <!-- Previous Exams Tab -->
+                <section id="tab2-content" class="tab-content hidden">
+                    {% if previous_exams %}
+                        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                            {% for exam in previous_exams %}
+                                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                                    <h3 class="text-2xl font-semibold text-gray-800">{{ exam.title }}</h3>
+                                    <p class="mt-2 text-gray-600">Start Time: {{ exam.start_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
+                                    <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
+                                       class="mt-4 inline-block text-blue-600 hover:underline">View Details</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No previous exams.</p>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+    <!-- Tab Functionality Script -->
+    <script>
+        function showTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.add('hidden'));
+
+            // Remove active class from all buttons
+            const tabButtons = document.querySelectorAll('.tabs button');
+            tabButtons.forEach(button => button.classList.remove('bg-blue-700', 'bg-green-700'));
+
+            // Show the selected tab content and add active class to corresponding button
+            document.getElementById(tabId + '-content').classList.remove('hidden');
+            document.getElementById(tabId + '-btn').classList.add(tabId === 'tab1' ? 'bg-blue-700' : 'bg-green-700');
+        }
+
+        // Initialize with the first tab active
+        document.addEventListener('DOMContentLoaded', function() {
+            showTab('tab1');
+        });
+    </script>
+{% endblock content %}

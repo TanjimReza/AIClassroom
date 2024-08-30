@@ -4,6 +4,9 @@ from django.contrib.auth.admin import UserAdmin
 
 from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
 from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users, Lesson, Exam, ExamSession, WebcamCapture, FocusLossLog, ExamAnswer, ExamSubmission, Question
+from .models import Question
+
+admin.site.register(Question)
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -155,6 +158,7 @@ admin.site.register(WebcamCapture)
 admin.site.register(FocusLossLog)
 admin.site.register(ExamSession)
 admin.site.register(ExamAnswer)
+
 
 
 @admin.register(Exam)

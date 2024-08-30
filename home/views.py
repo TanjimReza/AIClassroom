@@ -1,3 +1,8 @@
+import base64
+from django.core.files.base import ContentFile
+from .models import ExamSession, WebcamCapture, FocusLossLog
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from openai import OpenAI
 import re
 from tika import parser
@@ -25,7 +30,6 @@ from django.urls import reverse_lazy
 from django.utils import timezone
 
 from .forms import *
-# from .models import *
 
 
 class CustomLoginView(LoginView):
@@ -69,7 +73,14 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
 
 def home(request):
     user, type = request.user, request.user.get_user_type_display()
-    return HttpResponse(f"Hello, world! {user} - {type}")
+    # return HttpResponse(f"Hello, world! {user} - {type}"
+    return render(request, "base.html")
+
+
+def home(request):
+    user, type = request.user, request.user.get_user_type_display()
+    # return HttpResponse(f"Hello, world! {user} - {type}"
+    return render(request, "base.html")
 
 
 @login_required
@@ -155,28 +166,39 @@ def teacher_dashboard(request):
         "other_classrooms": other_classrooms,
     }
     print(context)
-    return render(request, "teacher_dashboard.html", context)
+    return render(request, "dashboard/dashboard.html", context)
 
 
 @login_required
 def classroom_detail(request, slug):
+    # Get the classroom based on the slug
     classroom = get_object_or_404(Classroom, slug=slug)
-    if not classroom.teachers.filter(user=request.user).exists() and not classroom.students.filter(user=request.user).exists():
+
+    # Check if the user is authorized to view the classroom
+    user_profile = None
+    if request.user.user_type == "teacher":
+        user_profile = TeacherProfile.objects.filter(user=request.user).first()
+    elif request.user.user_type == "student":
+        user_profile = StudentProfile.objects.filter(user=request.user).first()
+
+    if not user_profile or (user_profile.assigned_classroom != classroom and user_profile.enrolled_classroom != classroom):
         return HttpResponse("You are not authorized to view this classroom.", status=403)
 
+    # Fetch related data
     students = classroom.students.all()
     co_teachers = classroom.teachers.exclude(user=request.user)
-    # Fetch all lessons associated with the classroom
-    lessons = classroom.lessons.all()
+    lessons = Lesson.objects.filter(classroom=classroom).order_by("deadline")
+    course_materials = CourseMaterial.objects.filter(classroom=classroom).order_by("uploaded_at")
 
     context = {
         "classroom": classroom,
         "students": students,
         "co_teachers": co_teachers,
-        "lessons": lessons,  # Pass lessons to the template
+        "lessons": lessons,
+        "course_materials": course_materials,
     }
 
-    return render(request, "classroom_detail.html", context)
+    return render(request, "classroom/classroom_detail.html", context)
 
 
 @login_required
@@ -189,7 +211,7 @@ def lesson_detail(request, classroom_slug, lesson_id):
         "is_teacher": is_teacher,  # Pass the teacher check to the template
     }
 
-    return render(request, "lesson_detail.html", context)
+    return render(request, "lesson/lesson_detail.html", context)
 
 
 @login_required
@@ -405,7 +427,8 @@ def collect_lesson_data(lesson):
 
 
 def create_prompt_from_payload(payload):
-    prompt = f"Generate {payload['question_count']} questions based on the following lesson content.\n\n"
+    prompt = f"Generate {
+        payload['question_count']} questions based on the following lesson content.\n\n"
     prompt += f"Classroom: {payload['classroom']}\n"
     prompt += f"Lesson Title: {payload['lesson_title']}\n"
     prompt += f"Description: {payload['lesson_description']}\n"
@@ -422,7 +445,7 @@ def create_prompt_from_payload(payload):
     prompt += """[
         {
             "question": "string",
-            "type": "multiple-choice|true_false|short_answer|long_answer|fill_in_the_blank",
+            "type": "multiple_choice|true_false|short_answer|long_answer|fill_in_the_blank",
             "options": ["option1", "option2", "option3"],  # Only for multiple-choice
             "correct_answer": "string",  # Required for multiple-choice, true_false, and fill_in_the_blank
             "points": 1  # Optional, defaults to 1
@@ -448,7 +471,13 @@ def prepare_openai_payload(lesson_data, number_of_questions):
 
 def send_openai_request(payload):
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
-    messages = [{"role": "system", "content": "You are a helpful assistant that generates educational questions."}, {"role": "user", "content": create_prompt_from_payload(payload)}]
+    messages = [
+        {
+            "role": "system",
+            "content": "You are a helpful assistant that generates educational questions. and you strictly follow json structure that you have been given. You also make sure that you return a valid json",
+        },
+        {"role": "user", "content": create_prompt_from_payload(payload)},
+    ]
 
     print("Sending request to OpenAI...")
     completion = client.chat.completions.create(
@@ -463,7 +492,10 @@ def send_openai_request(payload):
 
 
 def store_generated_questions(lesson, response):
-    print(f"Storing questions for Lesson: {lesson.title} (Classroom: {lesson.classroom.name})")
+    print(
+        f"Storing questions for Lesson: {
+          lesson.title} (Classroom: {lesson.classroom.name})"
+    )
 
     generated_questions_text = response.choices[0].message.content.strip("```json").strip("```")
     print(f"Generated questions text: {generated_questions_text}")
@@ -477,7 +509,7 @@ def store_generated_questions(lesson, response):
         for question_data in generated_questions:
             question_text = question_data.get("question")
             question_type = question_data.get("type", "short_answer")  # Default to 'short_answer'
-            choices = ", ".join(question_data.get("options", [])) if question_type == "multiple-choice" else None
+            choices = "\n".join(question_data.get("options", [])) if question_type == "multiple_choice" else None
             correct_answer = question_data.get("correct_answer")
             points = question_data.get("points", 1)  # Default to 1
 
@@ -527,7 +559,7 @@ def generate_ai_questions(request, classroom_slug, lesson_id):
 @login_required
 def create_exam(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
-    if request.method == 'POST':
+    if request.method == "POST":
         form = ExamForm(request.POST, classroom=classroom)
         if form.is_valid():
             exam = form.save(commit=False)
@@ -538,13 +570,13 @@ def create_exam(request, classroom_slug):
             return redirect('exam_detail', exam_id=exam.exam_id)
     else:
         form = ExamForm(classroom=classroom)
-    return render(request, 'exams/create_exam.html', {'form': form, 'classroom': classroom})
+    return render(request, "exams/create_exam.html", {"form": form, "classroom": classroom})
 
 
 @login_required
 def exam_detail(request, exam_id):
     exam = get_object_or_404(Exam, exam_id=exam_id)
-    
+
     window = exam.start_time.strftime("%d %b %Y %I:%M %p") + " — " + exam.end_time.strftime("%d %b %Y %I:%M %p")
     duration = exam.duration_minutes
     num_questions = exam.question_count
@@ -555,13 +587,13 @@ def exam_detail(request, exam_id):
     context = { 'exam': exam, 'window': window, 'duration': duration, 'num_questions': num_questions, 'total_points': total_points }
     
     if not (exam.start_time <= timezone.now() <= exam.end_time):
-        return render(request, 'exams/exam_not_available.html', {'exam': exam})
+        return HttpResponse(f"Exam is not within the valid time window. {exam.start_time} - {exam.end_time}", status=403)
 
     session = ExamSession.objects.filter(exam=exam, student=request.user).first()
     context['session'] = session
 
     if not session:
-        if request.method == 'POST':
+        if request.method == "POST":
             session = ExamSession.objects.create(exam=exam, student=request.user)
             return redirect(session.get_absolute_url())
     # else:
@@ -594,31 +626,52 @@ def exam_session(request, session_token):
     })
 
 
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from .models import ExamSession, WebcamCapture, FocusLossLog
-import base64, json
-from django.core.files.base import ContentFile
-
 @require_POST
 def capture_image(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     data = json.loads(request.body)
-    image_data = data.get('image')
+    image_data = data.get("image")
 
-    format, imgstr = image_data.split(';base64,') 
-    ext = format.split('/')[-1] 
-    image = ContentFile(base64.b64decode(imgstr), name=f'{session.student.id}_{session.exam.id}.{ext}')
+    format, imgstr = image_data.split(";base64,")
+    ext = format.split("/")[-1]
+    image = ContentFile(
+        base64.b64decode(imgstr),
+        name=f"{
+                        session.student.id}_{session.exam.id}.{ext}",
+    )
 
     WebcamCapture.objects.create(session=session, image=image)
-    
-    return JsonResponse({'status': 'success'})
+
+    return JsonResponse({"status": "success"})
+
 
 @require_POST
 def log_focus_loss(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     FocusLossLog.objects.create(session=session)
-    return JsonResponse({'status': 'logged'})
+    return JsonResponse({"status": "logged"})
+
+
+@login_required
+def exam_overview(request):
+    user = request.user
+
+    # Check if the user is a teacher
+    is_teacher = user.user_type == "teacher" or user.is_staff
+
+    # Get upcoming exams (exams that haven't ended yet)
+    upcoming_exams = Exam.objects.filter(end_time__gt=timezone.now()).order_by("start_time")
+
+    # Get previous exams (exams that have already ended)
+    previous_exams = Exam.objects.filter(end_time__lte=timezone.now()).order_by("-start_time")
+
+    context = {
+        "is_teacher": is_teacher,
+        "upcoming_exams": upcoming_exams,
+        "previous_exams": previous_exams,
+    }
+
+    return render(request, "exam/exam_overview.html", context)
 
 
 @login_required

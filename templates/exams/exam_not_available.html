@@ -1,8 +1,8 @@
-
 {% block content %}
-<div class="container mt-4">
-    <h2>{{ exam.title }}</h2>
-    <p>This exam is not currently available. Please check the start and end times.</p>
-    <a href="{% url 'classroom_detail' exam.classroom.slug %}" class="btn btn-secondary mt-3">Back to Classroom</a>
-</div>
-{% endblock %}
+    <div class="container mt-4">
+        <h2>{{ exam.title }}</h2>
+        <p>This exam is not currently available. Please check the start and end times.</p>
+        <a href="{% url 'classroom_detail' exam.classroom.slug %}"
+           class="btn btn-secondary mt-3">Back to Classroom</a>
+    </div>
+{% endblock content %}

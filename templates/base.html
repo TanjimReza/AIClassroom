@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            {% block title %}
+                AI Classroom
+            {% endblock title %}
+        </title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        {% block extra_head %}
+        {% endblock extra_head %}
+    </head>
+    <body class="bg-[#f5f6f7] font-sans leading-normal tracking-normal">
+        <header class="max-w-[100rem] mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between bg-white rounded-lg mt-2">
+            <div id="left" class="flex items-center mb-2 md:mb-0">
+                <h1 class="text-2xl font-bold text-gray-900">AI Classroom</h1>
+            </div>
+            <div id="right" class="flex items-center">
+                <div id="user" class="flex items-center mr-2">
+                    Welcome, <span class="ml-1 underline">Tanjim</span>
+                </div>
+                <div id="logout-button" class="bg-[#eaebee] rounded-md px-2 py-1">
+                    <a href="{% url 'logout' %}"
+                       class="text-gray-600 hover:text-gray-800 transition duration-150">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-6 w-6"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </header>
+        <main class="max-w-7xl mx-auto">
+            {% block content %}
+            {% endblock content %}
+        </main>
+    </body>
+    {% block extra_js %}
+    {% endblock extra_js %}
+</html>
