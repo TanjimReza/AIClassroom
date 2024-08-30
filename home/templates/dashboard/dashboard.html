@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container mx-auto mt-8 px-4">
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Teacher Dashboard</h2>
+        <!-- Filter Options -->
+        <div class="mb-6 flex space-x-4">
+            <button type="button"
+                    class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-md shadow-sm hover:bg-gray-300 active:bg-gray-400 transition duration-150"
+                    onclick="showCreatedClassrooms()">Created by You</button>
+            <button type="button"
+                    class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-md shadow-sm hover:bg-gray-300 active:bg-gray-400 transition duration-150"
+                    onclick="showEnrolledClassrooms()">All Enrolled Classrooms</button>
+            <button type="button"
+                    class="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-md shadow-sm hover:bg-gray-300 active:bg-gray-400 transition duration-150"
+                    onclick="showOtherClassrooms()">Owned by Others</button>
+        </div>
+        <!-- Create Classroom Button -->
+        <div class="mb-8 text-left">
+            <a href="{% url 'create_classroom' %}"
+               class="inline-block px-6 py-2 bg-gray-600 text-white font-medium rounded-md shadow-sm hover:bg-gray-700 transition duration-150">Create New Classroom</a>
+        </div>
+        <!-- Classroom Cards -->
+        <div id="classroom-list">
+            <!-- Created by You -->
+            <div id="created-classrooms">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Created by You</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for classroom in created_classrooms %}
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                            <h5 class="text-xl font-semibold text-gray-900">{{ classroom.name }}</h5>
+                            <p class="text-gray-700 mt-2">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}"
+                               class="mt-4 inline-block text-blue-600 border border-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-600 hover:text-white transition duration-300">View Classroom</a>
+                        </div>
+                    {% empty %}
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <p class="text-gray-600">No classrooms found.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- All Enrolled Classrooms -->
+            <div id="enrolled-classrooms" class="hidden">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">All Enrolled Classrooms</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for classroom in enrolled_classrooms %}
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                            <h5 class="text-xl font-semibold text-gray-900">{{ classroom.name }}</h5>
+                            <p class="text-gray-700 mt-2">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}"
+                               class="mt-4 inline-block text-blue-600 border border-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-600 hover:text-white transition duration-300">View Classroom</a>
+                        </div>
+                    {% empty %}
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <p class="text-gray-600">No classrooms found.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <!-- Owned by Others -->
+            <div id="other-classrooms" class="hidden">
+                <h3 class="text-2xl font-bold text-gray-800 mb-4">Owned by Others</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for classroom in other_classrooms %}
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300">
+                            <h5 class="text-xl font-semibold text-gray-900">{{ classroom.name }}</h5>
+                            <p class="text-gray-700 mt-2">{{ classroom.description|truncatewords:20 }}</p>
+                            <a href="{% url 'classroom_detail' slug=classroom.slug %}"
+                               class="mt-4 inline-block text-blue-600 border border-blue-600 px-4 py-2 rounded-md font-medium hover:bg-blue-600 hover:text-white transition duration-300">View Classroom</a>
+                        </div>
+                    {% empty %}
+                        <div class="col-span-1 md:col-span-2 lg:col-span-3">
+                            <p class="text-gray-600">No classrooms found.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Add JavaScript for filtering -->
+    <script>
+function showCreatedClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'block';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showEnrolledClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'block';
+    document.getElementById('other-classrooms').style.display = 'none';
+}
+
+function showOtherClassrooms() {
+    document.getElementById('created-classrooms').style.display = 'none';
+    document.getElementById('enrolled-classrooms').style.display = 'none';
+    document.getElementById('other-classrooms').style.display = 'block';
+}
+
+function searchClassrooms() {
+    var input, filter, cards, cardContainer, title, i;
+    input = document.getElementById("search-input");
+    filter = input.value.toUpperCase();
+    cardContainer = document.getElementById("classroom-list");
+    cards = cardContainer.getElementsByClassName("card");
+    for (i = 0; i < cards.length; i++) {
+        title = cards[i].getElementsByClassName("card-title")[0];
+        if (title.innerHTML.toUpperCase().indexOf(filter) > -1) {
+            cards[i].style.display = "";
+        } else {
+            cards[i].style.display = "none";
+        }
+    }
+}
+    </script>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}
+    Lesson: {{ lesson.title }}
+{% endblock title %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">{{ lesson.title }}</h2>
+        <p class="text-lg mb-4">{{ lesson.description }}</p>
+        <p class="mb-4">
+            <strong>Objectives:</strong> {{ lesson.objectives }}
+        </p>
+        <p class="mb-4">
+            <strong>Deadline:</strong> {{ lesson.deadline|date:"Y-m-d H:i" }}
+        </p>
+        <!-- Course Materials Section -->
+        <h3 class="text-2xl font-semibold mt-6">Course Materials</h3>
+        {% if lesson.course_materials.all %}
+            <ul class="list-disc pl-6">
+                {% for material in lesson.course_materials.all %}
+                    <li>
+                        <a href="{{ material.file.url }}" class="text-blue-600 hover:underline">{{ material.title }}</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="text-gray-500 italic">No course materials linked to this lesson.</p>
+        {% endif %}
+        {% if is_teacher %}
+            <!-- Teacher-Specific Actions -->
+            <div class="mt-8 space-y-4">
+                <div class="flex space-x-4">
+                    <a href="{% url 'add_question' lesson.id %}"
+                       class="inline-block px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 ease-in-out">
+                        Add New Question
+                    </a>
+                    <a href="{% url 'update_lesson' classroom_slug=lesson.classroom.slug lesson_id=lesson.id %}"
+                       class="inline-block px-4 py-2 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition duration-300 ease-in-out">
+                        Update Lesson
+                    </a>
+                    <a href="{% url 'generate_ai_questions' lesson.classroom.slug lesson.id %}"
+                       class="inline-block px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out">
+                        Generate AI Questions
+                    </a>
+                </div>
+                <!-- Questions Section -->
+                <h3 class="text-2xl font-semibold mt-6">Questions</h3>
+                {% if lesson.questions.all %}
+                    <ul class="list-disc pl-6 space-y-4">
+                        {% for question in lesson.questions.all %}
+                            <li class="flex justify-between items-center">
+                                <span>{{ question.get_question_type_display }}: {{ question.question_text }}</span>
+                                <div class="space-x-2">
+                                    <a href="{% url 'edit_question' question.id %}"
+                                       class="text-blue-500 hover:underline">Edit</a>
+                                    <a href="{% url 'delete_question' question.id %}"
+                                       class="text-red-500 hover:underline">Delete</a>
+                                </div>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-gray-500 italic">No questions added yet.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock content %}
