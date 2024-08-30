@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
 from .forms import AdminUserCreationForm, StudentUserCreationForm, TeacherUserCreationForm, UsersCreationForm
-from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users, Lesson, Exam, ExamSession, WebcamCapture, FocusLossLog, ExamAnswer
+from .models import AdminProfile, Classroom, CourseMaterial, Invitation, StudentProfile, TeacherProfile, Users, Lesson, Exam, ExamSession, WebcamCapture, FocusLossLog, ExamAnswer, ExamSubmission, Question
 
 
 class AdminProfileInline(admin.StackedInline):
@@ -156,6 +156,7 @@ admin.site.register(FocusLossLog)
 admin.site.register(ExamSession)
 admin.site.register(ExamAnswer)
 
+
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
     list_display = ["title", "classroom", "created_by", "created_at", "exam_id"]
@@ -165,6 +166,13 @@ class ExamAdmin(admin.ModelAdmin):
     date_hierarchy = "created_at"
     ordering = ("-created_at",)
 
+@admin.register(ExamSubmission)
+class ExamSubmissionAdmin(admin.ModelAdmin):
+    list_display = ["student", "submission_key", "submitted_at"]
+    search_fields = ["exam__title", "student__email", "submission_key"]
+    # raw_id_fields = ("student")
+    date_hierarchy = "submitted_at"
+    ordering = ("-submitted_at",)
 
 @admin.register(CourseMaterial)
 class CourseMaterialAdmin(admin.ModelAdmin):
@@ -189,3 +197,5 @@ class LessonAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("classroom", "created_by").prefetch_related("course_materials")
+
+admin.site.register(Question)

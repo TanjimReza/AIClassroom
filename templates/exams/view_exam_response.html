@@ -1,0 +1,59 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="container mx-auto mt-8">
+    <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Exam Response: {{ submission.exam_session.exam.title }}</h2>
+
+    <!-- Student Details Section -->
+    <div class="bg-white shadow-lg rounded mb-8 p-6">
+        <h3 class="text-2xl font-semibold mb-4 text-gray-700">Submission Details</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p><strong>Student Name:</strong> {{ submission.exam_session.student.get_full_name }}</p>
+            <p><strong>Submission Time:</strong> {{ submission.submitted_at }}</p>
+            <p><strong>Total Score:</strong> {{ submission.total_score }} / {{ total_points }}</p>
+            <p><strong>Status:</strong> 
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                    {{ submission.get_status_display }}
+                </span>
+            </p>
+        </div>
+    </div>
+
+    <!-- Question Sections -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        {% for answer in submission.answers.questions %}
+        <div class="bg-white shadow-md rounded p-4">
+            <div x-data="{ open: false }" class="border border-gray-300 rounded-lg">
+                <div @click="open = !open" class="flex justify-between items-center cursor-pointer bg-gray-200 p-3 rounded-lg">
+                    <h5 class="text-xl font-semibold text-gray-700">Question {{ forloop.counter }}</h5>
+                    <svg :class="{'rotate-180': open}" class="w-6 h-6 transform transition-transform duration-300 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </div>
+                <div x-show="open" x-collapse class="bg-gray-50 p-4">
+                    <p><strong>Question:</strong> {{ answer.question_text }}</p>
+                    <p><strong>Your Answer:</strong> {{ answer.submitted_answer }}</p>
+                    {% if submission.status == "graded" %}
+                    <p><strong>Correct Answer:</strong> {{ answer.correct_answer }}</p>
+                    {% endif %}
+                    <p><strong>Score:</strong> {{ answer.score }} / {{ answer.max_score }}</p>
+                    <p><strong>Feedback:</strong> {{ answer.feedback }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="text-center mt-8">
+        <a href="{% url 'teacher_dashboard' %}" class="bg-indigo-600 hover:bg-indigo-800 text-white font-bold py-2 px-4 rounded">
+            Return to Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Include Alpine.js for toggling functionality -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.0/dist/alpine.min.js" defer></script>
+
+{% endblock %}

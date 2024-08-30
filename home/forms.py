@@ -179,7 +179,8 @@ class LessonForm(forms.ModelForm):
     class Meta:
         model = Lesson
         fields = ["title", "description", "objectives", "deadline", "course_materials"]
-
+        widgets = { 'deadline': forms.DateTimeInput(attrs={'type': 'datetime-local'}) }
+        
     def __init__(self, *args, **kwargs):
         classroom = kwargs.pop("classroom", None)
         super().__init__(*args, **kwargs)
@@ -227,10 +228,19 @@ class ExamForm(forms.ModelForm):
 
     class Meta:
         model = Exam
-        fields = ['title', 'description', 'start_time', 'end_time', 'duration_minutes', 'lessons']
+        fields = ['title', 'description', 'start_time', 'end_time', 'duration_minutes', 'lessons', 'question_count']
         widgets = {
             'start_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'end_time': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
+        labels = {
+            'title': 'Exam Title',
+            'description': 'Exam Description',
+            'start_time': 'Start Time',
+            'end_time': 'End Time',
+            'duration_minutes': 'Duration (Minutes)',
+            'lessons': 'Syllabus',
+            'question_count': 'Number of Questions'
         }
 
     def __init__(self, *args, **kwargs):
@@ -240,24 +250,75 @@ class ExamForm(forms.ModelForm):
             self.fields['lessons'].queryset = Lesson.objects.filter(classroom=classroom) 
 
 
+# class ExamSubmissionForm(forms.Form):
+#     def __init__(self, *args, **kwargs):
+#         exam = kwargs.pop('exam')
+#         super().__init__(*args, **kwargs)
+
+#         for question in exam.get_questions():
+#             field_name = f'question_{question.id}'
+#             if question.question_type == 'multiple_choice':
+#                 self.fields[field_name] = forms.ChoiceField(choices=[(opt, opt) for opt in question.choices.splitlines()], widget=forms.RadioSelect)
+#             elif question.question_type == 'true_false':
+#                 self.fields[field_name] = forms.ChoiceField(choices=[('True', 'True'), ('False', 'False')], widget=forms.RadioSelect)
+#             elif question.question_type == 'short_answer':
+#                 self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}))
+#             elif question.question_type == 'long_answer':
+#                 self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 5}))
+#             elif question.question_type == 'fill_in_the_blank':
+#                 self.fields[field_name] = forms.CharField()
+#             else:
+#                 raise ValueError(f'Invalid question type: {question.question_type}')
+
+
+class AnswerForm(forms.Form):
+    question_id = forms.IntegerField(widget=forms.HiddenInput())
+    submitted_answer = forms.CharField(widget=forms.Textarea, required=False)
+
 class ExamSubmissionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         exam = kwargs.pop('exam')
         super().__init__(*args, **kwargs)
-
         for question in exam.get_questions():
-            field_name = f'question_{question.id}'
-            if question.question_type == 'multiple_choice':
-                self.fields[field_name] = forms.ChoiceField(choices=[(opt, opt) for opt in question.choices.splitlines()], widget=forms.RadioSelect)
-            elif question.question_type == 'true_false':
-                self.fields[field_name] = forms.ChoiceField(choices=[('True', 'True'), ('False', 'False')], widget=forms.RadioSelect)
-            elif question.question_type == 'short_answer':
-                self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 3}))
-            elif question.question_type == 'long_answer':
-                self.fields[field_name] = forms.CharField(widget=forms.Textarea(attrs={'rows': 5}))
-            elif question.question_type == 'fill_in_the_blank':
-                self.fields[field_name] = forms.CharField()
-            else:
-                raise ValueError(f'Invalid question type: {question.question_type}')
+            self.fields[f'question_{question.id}'] = forms.CharField(
+                label=question.question_text,
+                widget=forms.Textarea if question.question_type in ['short_answer', 'long_answer'] else forms.TextInput,
+                required=False
+            )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        answers = []
+        for name, value in cleaned_data.items():
+            if name.startswith('question_'):
+                question_id = int(name.split('_')[1])
+                question = Question.objects.get(id=question_id)
+                answers.append({
+                    "question_id": question.id,
+                    "question_text": question.question_text,
+                    "submitted_answer": value,
+                    "correct_answer": question.correct_answer,
+                    "feedback": "",
+                    "score": None,
+                    "max_score": question.points
+                })
+        self.cleaned_data['answers'] = answers
+        return cleaned_data
 
 
+class GradingForm(forms.Form):
+    def __init__(self, *args, **kwargs):
+        submission = kwargs.pop('submission')
+        super().__init__(*args, **kwargs)
+        for answer in submission.answers['questions']:
+            self.fields[f'score_{answer["question_id"]}'] = forms.IntegerField(
+                label=f"Score for: {answer['question_text']}",
+                required=False,
+                min_value=0,
+                max_value=answer.get('max_score', 10)
+            )
+            self.fields[f'feedback_{answer["question_id"]}'] = forms.CharField(
+                label=f"Feedback for: {answer['question_text']}",
+                required=False,
+                widget=forms.Textarea
+            )

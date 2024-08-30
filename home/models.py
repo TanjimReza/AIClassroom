@@ -357,3 +357,23 @@ class ExamAnswer(models.Model):
         return f"Answer by {self.student.email} to {self.question}"
 
 
+class ExamSubmission(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_submissions')
+    exam_session = models.OneToOneField(ExamSession, on_delete=models.CASCADE, related_name='submission')
+    answers = models.JSONField()
+    total_score = models.IntegerField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=[('ungraded', 'Ungraded'), ('graded', 'Graded')], default='ungraded')
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    submission_key = models.CharField(max_length=255, unique=True, blank=False, primary_key=True)
+
+    def __str__(self):
+        return f"Submission for {self.exam_session.exam.title} by {self.exam_session.student.get_full_name()}"
+
+    def save(self, *args, **kwargs):
+        if not self.submission_key:
+            self.submission_key = self.get_submission_key()
+        super().save(*args, **kwargs)
+
+    def get_submission_key(self):
+        return f"{self.student.first_name}_{self.exam_session.exam.title}_{self.exam_session.exam.classroom.slug}"
