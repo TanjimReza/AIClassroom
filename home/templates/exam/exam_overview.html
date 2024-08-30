@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Exams Overview{% endblock %}
+{% block content %}
+    <div class="container mx-auto px-4 py-8">
+        <h2 class="text-3xl font-bold mb-4">Exams</h2>
+        {% comment %} {% if is_teacher %}
+        <a href="{% url 'create_exam' classroom_slug=classroom.slug %}" class="inline-block px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 ease-in-out mb-6">
+            Create New Exam
+        </a>
+        {% endif %} {% endcomment %}
+        <div class="tabs">
+            <input type="radio" id="tab1" name="tab-control" checked>
+            <input type="radio" id="tab2" name="tab-control">
+            <ul>
+                <li title="Upcoming Exams">
+                    <label for="tab1" role="button">
+                        <span>Upcoming Exams</span>
+                    </label>
+                </li>
+                <li title="Previous Exams">
+                    <label for="tab2" role="button">
+                        <span>Previous Exams</span>
+                    </label>
+                </li>
+            </ul>
+            <div class="slider">
+                <div class="indicator"></div>
+            </div>
+            <div class="content">
+                <!-- Upcoming Exams Tab -->
+                <section>
+                    {% if upcoming_exams %}
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {% for exam in upcoming_exams %}
+                                <div class="border rounded-lg p-4 bg-white shadow-sm">
+                                    <h3 class="text-xl font-semibold">{{ exam.title }}</h3>
+                                    <p class="text-gray-600 mt-2">Start Time: {{ exam.start_time }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time }}</p>
+                                    <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
+                                    <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
+                                       class="mt-4 inline-block text-blue-500 hover:underline">View Details</a>
+                                    {% comment %} {% if is_teacher %}
+                                    <a href="{% url 'edit_exam' exam_id=exam.exam_id %}" class="ml-2 inline-block text-yellow-500 hover:underline">Edit</a>
+                                    {% endif %} {% endcomment %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No upcoming exams.</p>
+                    {% endif %}
+                </section>
+                <!-- Previous Exams Tab -->
+                <section>
+                    {% if previous_exams %}
+                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {% for exam in previous_exams %}
+                                <div class="border rounded-lg p-4 bg-white shadow-sm">
+                                    <h3 class="text-xl font-semibold">{{ exam.title }}</h3>
+                                    <p class="text-gray-600 mt-2">Start Time: {{ exam.start_time }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time }}</p>
+                                    <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
+                                    <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
+                                       class="mt-4 inline-block text-blue-500 hover:underline">View Details</a>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-gray-500 italic">No previous exams.</p>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+{% endblock content %}

@@ -1,35 +1,94 @@
+{% extends "base.html" %}
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <h2 class="text-2xl font-bold mb-4">{{ lesson.title }} - {{ view_title }}</h2>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit"
-                    class="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition duration-300 ease-in-out">
-                Save Question
-            </button>
-        </form>
+    <div class="max-w-7xl mx-auto py-12 px-8 lg:px-12">
+        <!-- Header -->
+        <h2 class="text-4xl font-extrabold text-gray-900 mb-10">{{ lesson.title }} - {{ view_title }}</h2>
+        <!-- Form Container -->
+        <div class="bg-white shadow-lg rounded-lg p-10">
+            <form method="post" class="space-y-8">
+                {% csrf_token %}
+                <!-- Form Fields -->
+                <div>
+                    <label for="id_question_text"
+                           class="block text-lg font-medium text-gray-700">Question Text</label>
+                    <textarea name="question_text"
+                              cols="40"
+                              rows="6"
+                              required
+                              id="id_question_text"
+                              class="mt-2 block w-full shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="id_question_type"
+                           class="block text-lg font-medium text-gray-700">Question Type</label>
+                    <select name="question_type"
+                            required
+                            id="id_question_type"
+                            class="mt-2 block w-full shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="" selected>---------</option>
+                        <option value="multiple_choice">Multiple Choice</option>
+                        <option value="true_false">True/False</option>
+                        <option value="short_answer">Short Answer</option>
+                        <option value="long_answer">Long Answer/Essay</option>
+                        <option value="fill_in_the_blank">Fill-in-the-Blank</option>
+                    </select>
+                </div>
+                <div id="choices-field" class="hidden">
+                    <label for="id_choices" class="block text-lg font-medium text-gray-700">Choices</label>
+                    <textarea name="choices"
+                              cols="40"
+                              rows="4"
+                              id="id_choices"
+                              placeholder="Enter choices separated by commas (only for Multiple Choice)"
+                              class="mt-2 block w-full shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="id_correct_answer"
+                           class="block text-lg font-medium text-gray-700">Correct Answer</label>
+                    <input type="text"
+                           name="correct_answer"
+                           id="id_correct_answer"
+                           placeholder="Enter the correct answer"
+                           class="mt-2 block w-full shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="id_points" class="block text-lg font-medium text-gray-700">Points</label>
+                    <input type="number"
+                           name="points"
+                           value="1"
+                           id="id_points"
+                           class="mt-2 block w-full shadow-sm sm:text-lg border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <!-- Submit Button -->
+                <div class="flex justify-end">
+                    <button type="submit"
+                            class="px-8 py-3 bg-blue-600 text-white text-lg font-medium rounded-lg shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition duration-150 ease-in-out">
+                        Save Question
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
     <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const questionTypeSelect = document.querySelector('#id_question_type');
-        const choicesField = document.querySelector('#id_choices');
+document.addEventListener('DOMContentLoaded', function () {
+    const questionTypeSelect = document.querySelector('#id_question_type');
+    const choicesField = document.getElementById('choices-field');
 
-        function toggleChoicesField() {
-            if (questionTypeSelect.value === 'multiple_choice') {
-                choicesField.closest('.form-group').style.display = 'block';
-                choicesField.required = true;
-            } else {
-                choicesField.closest('.form-group').style.display = 'none';
-                choicesField.required = false;
-            }
+    function toggleChoicesField() {
+        if (questionTypeSelect.value === 'multiple_choice') {
+            choicesField.classList.remove('hidden');
+            choicesField.querySelector('textarea').required = true;
+        } else {
+            choicesField.classList.add('hidden');
+            choicesField.querySelector('textarea').required = false;
         }
+    }
 
-        // Initial check when the page loads
-        toggleChoicesField();
+    // Initial check when the page loads
+    toggleChoicesField();
 
-        // Check each time the question type is changed
-        questionTypeSelect.addEventListener('change', toggleChoicesField);
-    });
+    // Check each time the question type is changed
+    questionTypeSelect.addEventListener('change', toggleChoicesField);
+});
     </script>
 {% endblock content %}

@@ -161,3 +161,4 @@ cython_debug/
 #.idea/
 staticfiles/
 checkpdf.py
+frontend/node_modules/

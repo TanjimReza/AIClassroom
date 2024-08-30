@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}
+    {{ classroom.name }}
+{% endblock title %}
+{% block content %}
+    <div class="container mx-auto px-6 py-12">
+        <!-- Classroom Header -->
+        <div class="bg-gray-900 text-white rounded-lg p-8 shadow-md">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-4xl font-bold">{{ classroom.name }}</h1>
+                    <p class="mt-2 text-gray-300">{{ classroom.description }}</p>
+                </div>
+                {% if user.user_type == "teacher" %}
+                    <div class="space-x-4">
+                        <a href="{% url 'create_lesson' classroom_slug=classroom.slug %}"
+                           class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition">
+                            + Create Lesson
+                        </a>
+                        <a href="{% url 'upload_material' slug=classroom.slug %}"
+                           class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition">
+                            + Upload Material
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <!-- Content Sections -->
+        <div class="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Lessons Section -->
+            <div class="col-span-2">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Lessons</h2>
+                {% if lessons %}
+                    <div class="space-y-4">
+                        {% for lesson in lessons %}
+                            <a href="{% url 'lesson_detail' classroom_slug=classroom.slug lesson_id=lesson.id %}"
+                               class="block bg-white rounded-lg shadow-md p-6 hover:bg-gray-100 transition">
+                                <h3 class="text-xl font-bold text-gray-900">{{ lesson.title }}</h3>
+                                <p class="text-gray-600 mt-2">{{ lesson.description|truncatewords:20 }}</p>
+                                <p class="text-sm text-gray-500 mt-2">Deadline: {{ lesson.deadline|date:"M d, Y H:i" }}</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-500 italic">No lessons available for this classroom.</p>
+                {% endif %}
+            </div>
+            <!-- Members Section -->
+            <div class="col-span-1 bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-4">Members</h2>
+                <div class="space-y-6">
+                    <!-- Teachers -->
+                    <div>
+                        <h3 class="text-xl font-medium text-gray-700 mb-2">Teachers</h3>
+                        <ul class="space-y-2">
+                            {% for teacher in co_teachers %}
+                                <li class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-900">{{ teacher.user.get_full_name }}</span>
+                                    <span class="text-sm text-gray-500">{{ teacher.user.email }}</span>
+                                </li>
+                            {% empty %}
+                                <li class="text-gray-500 italic">No co-teachers assigned.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <!-- Students -->
+                    <div>
+                        <h3 class="text-xl font-medium text-gray-700 mb-2">Students</h3>
+                        <ul class="space-y-2">
+                            {% for student in students %}
+                                <li class="flex justify-between items-center">
+                                    <span class="font-medium text-gray-900">{{ student.user.get_full_name }}</span>
+                                    <span class="text-sm text-gray-500">{{ student.user.email }}</span>
+                                </li>
+                            {% empty %}
+                                <li class="text-gray-500 italic">No students enrolled.</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Course Materials Section -->
+        <div class="mt-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Course Materials</h2>
+            {% if course_materials %}
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {% for material in course_materials %}
+                        <a href="{{ material.file.url }}"
+                           class="block bg-white rounded-lg shadow-md p-6 hover:bg-gray-100 transition">
+                            <h3 class="text-lg font-medium text-gray-900">{{ material.title }}</h3>
+                            <p class="text-sm text-gray-600 mt-2">{{ material.description|truncatewords:15 }}</p>
+                        </a>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-gray-500 italic">No course materials linked to this classroom.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}

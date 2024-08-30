@@ -73,7 +73,14 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
 
 def home(request):
     user, type = request.user, request.user.get_user_type_display()
-    return HttpResponse(f"Hello, world! {user} - {type}")
+    # return HttpResponse(f"Hello, world! {user} - {type}"
+    return render(request, "base.html")
+
+
+def home(request):
+    user, type = request.user, request.user.get_user_type_display()
+    # return HttpResponse(f"Hello, world! {user} - {type}"
+    return render(request, "base.html")
 
 
 @login_required
@@ -159,28 +166,39 @@ def teacher_dashboard(request):
         "other_classrooms": other_classrooms,
     }
     print(context)
-    return render(request, "teacher_dashboard.html", context)
+    return render(request, "dashboard/dashboard.html", context)
 
 
 @login_required
 def classroom_detail(request, slug):
+    # Get the classroom based on the slug
     classroom = get_object_or_404(Classroom, slug=slug)
-    if not classroom.teachers.filter(user=request.user).exists() and not classroom.students.filter(user=request.user).exists():
+
+    # Check if the user is authorized to view the classroom
+    user_profile = None
+    if request.user.user_type == "teacher":
+        user_profile = TeacherProfile.objects.filter(user=request.user).first()
+    elif request.user.user_type == "student":
+        user_profile = StudentProfile.objects.filter(user=request.user).first()
+
+    if not user_profile or (user_profile.assigned_classroom != classroom and user_profile.enrolled_classroom != classroom):
         return HttpResponse("You are not authorized to view this classroom.", status=403)
 
+    # Fetch related data
     students = classroom.students.all()
     co_teachers = classroom.teachers.exclude(user=request.user)
-    # Fetch all lessons associated with the classroom
-    lessons = classroom.lessons.all()
+    lessons = Lesson.objects.filter(classroom=classroom).order_by("deadline")
+    course_materials = CourseMaterial.objects.filter(classroom=classroom).order_by("uploaded_at")
 
     context = {
         "classroom": classroom,
         "students": students,
         "co_teachers": co_teachers,
-        "lessons": lessons,  # Pass lessons to the template
+        "lessons": lessons,
+        "course_materials": course_materials,
     }
 
-    return render(request, "classroom_detail.html", context)
+    return render(request, "classroom/classroom_detail.html", context)
 
 
 @login_required
@@ -193,7 +211,7 @@ def lesson_detail(request, classroom_slug, lesson_id):
         "is_teacher": is_teacher,  # Pass the teacher check to the template
     }
 
-    return render(request, "lesson_detail.html", context)
+    return render(request, "lesson/lesson_detail.html", context)
 
 
 @login_required
@@ -581,7 +599,7 @@ def exam_detail(request, exam_id):
 
     # Check if the exam is within the valid time window
     if not (exam.start_time <= timezone.now() <= exam.end_time):
-        return HttpResponse("Exam is not within the valid time window. {exam.start_time} - {exam.end_time}", status=403)
+        return HttpResponse(f"Exam is not within the valid time window. {exam.start_time} - {exam.end_time}", status=403)
 
     # Check if the student has already started this exam
     session = ExamSession.objects.filter(exam=exam, student=request.user).first()
@@ -669,3 +687,25 @@ def log_focus_loss(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
     FocusLossLog.objects.create(session=session)
     return JsonResponse({"status": "logged"})
+
+
+@login_required
+def exam_overview(request):
+    user = request.user
+
+    # Check if the user is a teacher
+    is_teacher = user.user_type == "teacher" or user.is_staff
+
+    # Get upcoming exams (exams that haven't ended yet)
+    upcoming_exams = Exam.objects.filter(end_time__gt=timezone.now()).order_by("start_time")
+
+    # Get previous exams (exams that have already ended)
+    previous_exams = Exam.objects.filter(end_time__lte=timezone.now()).order_by("-start_time")
+
+    context = {
+        "is_teacher": is_teacher,
+        "upcoming_exams": upcoming_exams,
+        "previous_exams": previous_exams,
+    }
+
+    return render(request, "exam/exam_overview.html", context)
