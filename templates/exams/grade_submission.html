@@ -1,0 +1,62 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<script src="https://cdn.tailwindcss.com"></script>
+
+<div class="container mx-auto mt-8">
+    <h2 class="text-3xl font-bold mb-6 text-center text-gray-800">Grade Submission for {{ submission.exam_session.exam.title }}</h2>
+    
+    <!-- Student Details Section -->
+    <div class="bg-white shadow-lg rounded mb-8 p-6">
+        <h3 class="text-2xl font-semibold mb-4 text-gray-700">Student Details</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <p><strong>Student Name:</strong> {{ submission.exam_session.student.get_full_name }}</p>
+            <p><strong>Submission Time:</strong> {{ submission.submitted_at }}</p>
+        </div>
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        <!-- Question Sections -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            {% for answer in submission.answers.questions %}
+            <div class="bg-white shadow-md rounded p-4">
+                <div x-data="{ open: false }" class="border border-gray-300 rounded-lg">
+                    <div @click="open = !open" class="flex justify-between items-center cursor-pointer bg-gray-200 p-3 rounded-lg">
+                        <h5 class="text-xl font-semibold text-gray-700">Question {{ forloop.counter }}</h5>
+                        <svg :class="{'rotate-180': open}" class="w-6 h-6 transform transition-transform duration-300 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                    <div x-show="open" x-collapse class="bg-gray-50 p-4">
+                        <p><strong>Question:</strong> {{ answer.question_text }}</p>
+                        <p><strong>Student's Answer:</strong> {{ answer.submitted_answer }}</p>
+                        <p><strong>Correct Answer:</strong> {{ answer.correct_answer }}</p>
+                        <div class="form-group mt-4 flex items-center">
+                            <label for="score_{{ answer.question_id }}" class="block text-gray-900 text-sm font-bold mr-2">Score:</label>
+                            <input type="number" name="score_{{ answer.question_id }}" value="{{ answer.score }}" class="form-control w-16 px-2 py-1 border border-gray-300 rounded-md text-center">
+                            <span class="ml-2 text-gray-700 text-sm"><strong> / {{ answer.max_score }} </strong></span>
+                        </div>
+                        
+                        <div class="form-group mt-4">
+                            <label for="feedback_{{ answer.question_id }}" class="block text-gray-700 text-sm font-bold mb-2">Feedback:</label>
+                            <textarea name="feedback_{{ answer.question_id }}" class="form-control w-full px-3 py-2 border border-gray-300 rounded-md">{{ answer.feedback }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-8">
+            <button type="submit" class="bg-green-600 hover:bg-green-800 text-white font-bold py-2 px-4 rounded">
+                Submit Grades
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Include Alpine.js for toggling functionality -->
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.0/dist/alpine.min.js" defer></script>
+
+{% endblock %}

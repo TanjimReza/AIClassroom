@@ -16,7 +16,7 @@ from .models import Lesson, Question
 from django.http import HttpResponseForbidden
 from django.shortcuts import redirect, get_object_or_404
 from .forms import LessonForm
-from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users, Lesson, CourseMaterial, Question, Exam, ExamAnswer, ExamSession
+from .models import AdminProfile, Classroom, Invitation, StudentProfile, TeacherProfile, Users, Lesson, CourseMaterial, Question, Exam, ExamAnswer, ExamSession, ExamSubmission
 from .forms import CourseMaterialForm
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
@@ -155,7 +155,7 @@ def student_registration(request, token):
 
 @login_required
 def teacher_dashboard(request):
-    teacher_profile = get_object_or_404(TeacherProfile, user=request.user)
+    teacher_profile = get_object_or_404(Users, user_type="teacher", email=request.user.email)
     created_classrooms = Classroom.objects.filter(created_by=request.user)
     enrolled_classrooms = Classroom.objects.filter(teachers__user=request.user).distinct()
     other_classrooms = enrolled_classrooms.exclude(created_by=request.user)
@@ -263,9 +263,8 @@ def update_lesson(request, classroom_slug, lesson_id):
             lesson.classroom = classroom
             lesson.created_by = request.user
             lesson.save()
-            form.save_m2m()  # Save many-to-many relationships
+            form.save_m2m()
             # return redirect("classroom_detail", slug=classroom.slug)
-            # redirect to the lesson detail page
             return redirect("lesson_detail", classroom_slug=classroom.slug, lesson_id=lesson.id)
     else:
         form = LessonForm(instance=lesson, classroom=classroom)
@@ -278,13 +277,10 @@ def classroom_content_management(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
 
     if not request.user.is_staff and request.user != classroom.created_by:
-        # If the user is not authorized, return a 403 Forbidden response
         return HttpResponseForbidden("You do not have permission to manage content in this classroom.")
 
-    # Retrieve all course materials associated with this classroom
     course_materials = CourseMaterial.objects.filter(classroom=classroom)
 
-    # Render the management template
     return render(
         request,
         "classroom_content_management.html",
@@ -381,12 +377,8 @@ def extract_text_from_txt(file_path):
 
 
 def clean_extracted_text(text):
-    # Remove excessive newlines and whitespace
     text = re.sub(r"\s+", " ", text).strip()
-
-    # Optionally, remove non-ASCII characters (if they are causing issues)
     text = re.sub(r"[^\x00-\x7F]+", " ", text)
-
     return text
 
 
@@ -394,7 +386,6 @@ def extract_text_from_pdf(file_path):
     parsed_pdf = parser.from_file(file_path)
     text = parsed_pdf["content"]
 
-    # Clean the extracted text
     clean_text = clean_extracted_text(text)
 
     print(f"Extracted text from PDF file ({file_path}): {clean_text[:100]}...")
@@ -412,8 +403,7 @@ def collect_lesson_data(lesson):
     lesson_data = {"classroom": lesson.classroom.name, "lesson_title": lesson.title, "lesson_description": lesson.description, "lesson_objectives": lesson.objectives, "lesson_contents": []}
 
     print(
-        f"Collecting data for Lesson: {
-            lesson.title} (Classroom: {lesson.classroom.name})"
+        f"Collecting data for Lesson: {lesson.title} (Classroom: {lesson.classroom.name})"
     )
 
     for material in lesson.course_materials.all():
@@ -437,8 +427,7 @@ def collect_lesson_data(lesson):
 
 
 def create_prompt_from_payload(payload):
-    prompt = f"Generate {
-        payload['question_count']} questions based on the following lesson content.\n\n"
+    prompt = f"Generate {payload['question_count']} questions based on the following lesson content.\n\n"
     prompt += f"Classroom: {payload['classroom']}\n"
     prompt += f"Lesson Title: {payload['lesson_title']}\n"
     prompt += f"Description: {payload['lesson_description']}\n"
@@ -451,7 +440,6 @@ def create_prompt_from_payload(payload):
         elif content["type"] == "image_description":
             prompt += f"Image: {content['description']}\n"
 
-    # Specify the JSON format to be used in the response
     prompt += "\nPlease format the questions in the following JSON structure:\n"
     prompt += """[
         {
@@ -504,19 +492,15 @@ def send_openai_request(payload):
 
 def store_generated_questions(lesson, response):
     print(
-        f"Storing questions for Lesson: {
-          lesson.title} (Classroom: {lesson.classroom.name})"
+        f"Storing questions for Lesson: {lesson.title} (Classroom: {lesson.classroom.name})"
     )
 
-    # Access the content of the first choice
     generated_questions_text = response.choices[0].message.content.strip("```json").strip("```")
     print(f"Generated questions text: {generated_questions_text}")
 
     try:
-        # Parse the JSON from the generated text
         generated_questions = json.loads(generated_questions_text)
 
-        # Ensure it's a list
         if not isinstance(generated_questions, list):
             generated_questions = [generated_questions]
 
@@ -535,7 +519,6 @@ def store_generated_questions(lesson, response):
 
     except json.JSONDecodeError as e:
         print(f"Error decoding JSON: {e}")
-        # Log error or notify the user as necessary
 
 
 # * ---------------------------------------------------------------------
@@ -545,19 +528,14 @@ def store_generated_questions(lesson, response):
 def process_ai_generation(request, classroom_slug, lesson_id, num_questions):
     lesson = get_object_or_404(Lesson, id=lesson_id, classroom__slug=classroom_slug)
 
-    # Collect lesson data
     lesson_data = collect_lesson_data(lesson)
 
-    # Prepare payload for OpenAI
     payload = prepare_openai_payload(lesson_data, num_questions)
 
-    # Send request to OpenAI and get the response
     response = send_openai_request(payload)
 
-    # Parse the response and store the generated questions in the database
     store_generated_questions(lesson, response)
 
-    # Redirect to lesson detail page
     return redirect("lesson_detail", classroom_slug=classroom_slug, lesson_id=lesson_id)
 
 
@@ -586,8 +564,8 @@ def create_exam(request, classroom_slug):
             exam.classroom = classroom
             exam.created_by = request.user
             exam.save()
-            form.save_m2m()
-            render(request, "exams/exam_detail.html", {"exam": exam})
+            form.save_m2m()  
+            return redirect('exam_detail', exam_id=exam.exam_id)
     else:
         form = ExamForm(classroom=classroom)
     return render(request, "exams/create_exam.html", {"form": form, "classroom": classroom})
@@ -597,68 +575,58 @@ def create_exam(request, classroom_slug):
 def exam_detail(request, exam_id):
     exam = get_object_or_404(Exam, exam_id=exam_id)
 
-    # Check if the exam is within the valid time window
+    window = exam.start_time.strftime("%d %b %Y %I:%M %p") + " — " + exam.end_time.strftime("%d %b %Y %I:%M %p")
+    duration = exam.duration_minutes
+    num_questions = exam.question_count
+    total_points = 0
+    for question in exam.get_questions():
+        total_points += question.points
+        
+    context = { 'exam': exam, 'window': window, 'duration': duration, 'num_questions': num_questions, 'total_points': total_points }
+    
     if not (exam.start_time <= timezone.now() <= exam.end_time):
         return HttpResponse(f"Exam is not within the valid time window. {exam.start_time} - {exam.end_time}", status=403)
 
-    # Check if the student has already started this exam
     session = ExamSession.objects.filter(exam=exam, student=request.user).first()
+    context['session'] = session
 
     if not session:
-        # If no session exists, create one
         if request.method == "POST":
             session = ExamSession.objects.create(exam=exam, student=request.user)
             return redirect(session.get_absolute_url())
-    else:
-        # If session exists, redirect to the session
-        return redirect(session.get_absolute_url())
+    
+    submission = ExamSubmission.objects.filter(exam_session=session, student=request.user)
+    submitted = submission.exists()
+    context['submitted'] = submitted
+    context['submission'] = submission.first() if submitted else None
+    # else:
+    #     # If session exists, redirect to the session
+    #     return redirect(session.get_absolute_url())
 
-    return render(request, "exams/exam_detail.html", {"exam": exam})
-
-
-@login_required
-def take_exam(request, exam_id):
-    exam = get_object_or_404(Exam, exam_id=exam_id)
-    if request.method == "POST":
-        form = ExamSubmissionForm(request.POST, exam=exam)
-        if form.is_valid():
-            form.save()
-            return redirect("exam_result", exam_id=exam.id)
-    else:
-        form = ExamSubmissionForm(exam=exam)
-
-    return render(request, "exams/take_exam.html", {"form": form, "exam": exam})
+    return render(request, 'exams/exam_detail.html', context=context)
 
 
 @login_required
 def exam_session(request, session_token):
     session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
 
-    # Handle exam logic here, e.g., displaying questions, tracking time, etc.
-    questions = session.exam.get_questions()
-    timer = session.exam.duration_minutes * 60  # Convert duration to seconds
-    countdown = timer - (timezone.now() - session.started_at).seconds
+    timer = session.exam.duration_minutes * 60
+    elapsed_time = (timezone.now() - session.started_at).seconds
+    countdown = timer - elapsed_time
 
-    if session.completed_at:
-        return render(request, "exams/exam_completed.html", {"session": session, "questions": questions})
-
-    if request.method == "POST":
-
-        form = ExamSubmissionForm(request.POST, exam=session.exam)
-        if form.is_valid():
-            # Process the submitted answers
-            for question in questions:
-                answer_text = form.cleaned_data.get(f"question_{question.id}")
-                if answer_text is not None:
-                    ExamAnswer.objects.create(session=session, question=question, text_answer=answer_text, student=request.user)
+    if countdown <= 0 or session.completed_at:
+        if not session.completed_at:
             session.completed_at = timezone.now()
             session.save()
-            return redirect("exam_completed", session_token=session.session_token)
-    else:
-        form = ExamSubmissionForm(exam=session.exam)
+        return render(request, 'exams/exam_completed.html', {'session': session})
 
-    # If the session is ongoing
-    return render(request, "exams/exam_session.html", {"session": session, "questions": questions, "form": form, "countdown": countdown})
+    questions = session.exam.get_questions()
+
+    return render(request, 'exams/exam_session.html', {
+        'session': session,
+        'questions': questions,
+        'countdown': countdown
+    })
 
 
 @require_POST
@@ -667,16 +635,13 @@ def capture_image(request, session_token):
     data = json.loads(request.body)
     image_data = data.get("image")
 
-    # Decode the base64 image
     format, imgstr = image_data.split(";base64,")
     ext = format.split("/")[-1]
     image = ContentFile(
         base64.b64decode(imgstr),
-        name=f"{
-                        session.student.id}_{session.exam.id}.{ext}",
+        name=f"{session.student.id}_{session.exam.id}.{ext}",
     )
 
-    # Save the image in the WebcamCapture model
     WebcamCapture.objects.create(session=session, image=image)
 
     return JsonResponse({"status": "success"})
@@ -709,3 +674,114 @@ def exam_overview(request):
     }
 
     return render(request, "exam/exam_overview.html", context)
+
+
+@login_required
+def submit_exam(request, session_token):
+    session = get_object_or_404(ExamSession, session_token=session_token, student=request.user)
+    exam = session.exam
+
+    if request.method == 'POST':
+        form = ExamSubmissionForm(request.POST, exam=exam)
+        if form.is_valid():
+            submission, created = ExamSubmission.objects.update_or_create(
+                exam_session=session,
+                defaults={
+                    'student': request.user,
+                    'answers': {"questions": form.cleaned_data['answers']},
+                    'status': 'new',
+                }
+            )
+            session.completed_at = timezone.now()
+            session.save()
+            return redirect('exam_submission_success')
+    else:
+        form = ExamSubmissionForm(exam=exam)
+
+    return render(request, 'exams/exam_session.html', {'form': form, 'session': session})    
+
+
+@login_required
+def grade_submission(request, submission_key):
+    submission = get_object_or_404(ExamSubmission, submission_key=submission_key)
+
+    if request.method == 'POST':
+        form = GradingForm(request.POST, submission=submission)
+        if form.is_valid():
+            total_score = 0
+            for answer in submission.answers['questions']:
+                question_id = answer['question_id']
+                max_score = answer['max_score']
+                score = form.cleaned_data.get(f'score_{question_id}', 0)
+                feedback = form.cleaned_data.get(f'feedback_{question_id}', '')
+
+                answer['max_score'] = max_score
+                answer['score'] = score
+                answer['feedback'] = feedback
+                total_score += score
+
+            submission.answers['questions'] = submission.answers['questions']
+            submission.total_score = total_score
+            submission.status = 'graded'
+            submission.save()
+
+            return redirect('exam_overview')
+    else:
+        form = GradingForm(submission=submission)
+
+    return render(request, 'exams/grade_submission.html', {'form': form, 'submission': submission})
+
+
+@login_required
+def exam_submission_success(request):
+    return render(request, 'exams/exam_submission_success.html')
+
+
+@login_required
+def view_exam_response(request, submission_key):
+    submission = get_object_or_404(ExamSubmission, submission_key=submission_key, exam_session__student=request.user)
+    total_points = 0
+    for question in submission.exam_session.exam.get_questions():
+        total_points += question.points
+
+    return render(request, 'exams/view_exam_response.html', {'submission': submission, 'total_points': total_points})
+
+
+@login_required
+def completed_exams(request):
+    user = request.user
+
+    # # Check if the user is a student
+    # if user.user_type != "student":
+    #     return render(request, "exam/completed_exams.html", {"error": "Only students can view their completed exams."})
+
+    # Get completed exams for the user
+    completed_exams = Exam.objects.filter(
+        end_time__lte=timezone.now(),
+        examsubmission__student=user
+    ).distinct().order_by("-start_time")
+
+    context = {
+        "completed_exams": completed_exams,
+    }
+
+    return render(request, "exam/user_completed_exams.html", context)
+
+@login_required
+def exams_overview(request):
+    user = request.user
+
+    # Get completed exam submissions for the user
+    completed_submissions = ExamSubmission.objects.filter(
+        student=user,
+        exam_session__end_time__lte=timezone.now()
+    ).order_by('-exam_session__end_time')
+
+    context = {
+        'completed_submissions': completed_submissions,
+        # Add other context variables if needed
+    }
+
+    return render(request, 'exam_overview.html', context)
+
+

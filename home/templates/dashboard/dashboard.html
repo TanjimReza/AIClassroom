@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
     <div class="container mx-auto mt-8 px-4">
-        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Teacher Dashboard</h2>
+        <h2 class="text-3xl font-extrabold text-gray-900 mb-8">Dashboard</h2>
         <!-- Filter Options -->
         <div class="mb-6 flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
             <button type="button"
@@ -23,7 +23,12 @@
                class="inline-block px-6 py-2 bg-green-600 text-white font-medium rounded-md shadow-sm hover:bg-green-700 transition duration-150">
                 Create New Classroom
             </a>
+            <a href="{% url 'exam_overview' %}"
+               class="inline-block px-6 py-2 ml-2 bg-gray-600 text-white font-medium rounded-md shadow-sm hover:bg-gray-700 transition duration-150">
+                Exams
+            </a>
         </div>
+        
         <!-- Classroom Cards -->
         <div id="classroom-list">
             <!-- Created by You -->
