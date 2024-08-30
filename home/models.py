@@ -357,6 +357,8 @@ class ExamAnswer(models.Model):
 
     def __str__(self):
         return f"Answer by {self.student.email} to {self.question}"
+    
+    
 class ExamSubmission(models.Model):
     student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='exam_submissions')
     exam_session = models.OneToOneField(ExamSession, on_delete=models.CASCADE, related_name='submission')

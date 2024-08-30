@@ -202,4 +202,4 @@ class LessonAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("classroom", "created_by").prefetch_related("course_materials")
 
-admin.site.register(Question)
+# admin.site.register(Question)

@@ -427,8 +427,7 @@ def collect_lesson_data(lesson):
 
 
 def create_prompt_from_payload(payload):
-    prompt = f"Generate {
-        payload['question_count']} questions based on the following lesson content.\n\n"
+    prompt = f"Generate {payload['question_count']} questions based on the following lesson content.\n\n"
     prompt += f"Classroom: {payload['classroom']}\n"
     prompt += f"Lesson Title: {payload['lesson_title']}\n"
     prompt += f"Description: {payload['lesson_description']}\n"
@@ -493,8 +492,7 @@ def send_openai_request(payload):
 
 def store_generated_questions(lesson, response):
     print(
-        f"Storing questions for Lesson: {
-          lesson.title} (Classroom: {lesson.classroom.name})"
+        f"Storing questions for Lesson: {lesson.title} (Classroom: {lesson.classroom.name})"
     )
 
     generated_questions_text = response.choices[0].message.content.strip("```json").strip("```")
@@ -596,6 +594,11 @@ def exam_detail(request, exam_id):
         if request.method == "POST":
             session = ExamSession.objects.create(exam=exam, student=request.user)
             return redirect(session.get_absolute_url())
+    
+    submission = ExamSubmission.objects.filter(exam_session=session, student=request.user)
+    submitted = submission.exists()
+    context['submitted'] = submitted
+    context['submission'] = submission.first() if submitted else None
     # else:
     #     # If session exists, redirect to the session
     #     return redirect(session.get_absolute_url())
@@ -636,8 +639,7 @@ def capture_image(request, session_token):
     ext = format.split("/")[-1]
     image = ContentFile(
         base64.b64decode(imgstr),
-        name=f"{
-                        session.student.id}_{session.exam.id}.{ext}",
+        name=f"{session.student.id}_{session.exam.id}.{ext}",
     )
 
     WebcamCapture.objects.create(session=session, image=image)
@@ -723,7 +725,7 @@ def grade_submission(request, submission_key):
             submission.status = 'graded'
             submission.save()
 
-            return redirect('exam_grading_complete')
+            return redirect('exam_overview')
     else:
         form = GradingForm(submission=submission)
 
@@ -743,3 +745,43 @@ def view_exam_response(request, submission_key):
         total_points += question.points
 
     return render(request, 'exams/view_exam_response.html', {'submission': submission, 'total_points': total_points})
+
+
+@login_required
+def completed_exams(request):
+    user = request.user
+
+    # # Check if the user is a student
+    # if user.user_type != "student":
+    #     return render(request, "exam/completed_exams.html", {"error": "Only students can view their completed exams."})
+
+    # Get completed exams for the user
+    completed_exams = Exam.objects.filter(
+        end_time__lte=timezone.now(),
+        examsubmission__student=user
+    ).distinct().order_by("-start_time")
+
+    context = {
+        "completed_exams": completed_exams,
+    }
+
+    return render(request, "exam/user_completed_exams.html", context)
+
+@login_required
+def exams_overview(request):
+    user = request.user
+
+    # Get completed exam submissions for the user
+    completed_submissions = ExamSubmission.objects.filter(
+        student=user,
+        exam_session__end_time__lte=timezone.now()
+    ).order_by('-exam_session__end_time')
+
+    context = {
+        'completed_submissions': completed_submissions,
+        # Add other context variables if needed
+    }
+
+    return render(request, 'exam_overview.html', context)
+
+
