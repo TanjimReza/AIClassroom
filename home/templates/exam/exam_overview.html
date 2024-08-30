@@ -1,47 +1,40 @@
 {% extends 'base.html' %}
 {% block title %}Exams Overview{% endblock %}
 {% block content %}
-    <div class="container mx-auto px-4 py-8">
-        <h2 class="text-3xl font-bold mb-4">Exams</h2>
-        {% comment %} {% if is_teacher %}
-        <a href="{% url 'create_exam' classroom_slug=classroom.slug %}" class="inline-block px-4 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition duration-300 ease-in-out mb-6">
-            Create New Exam
-        </a>
-        {% endif %} {% endcomment %}
+    <div class="container mx-auto px-4 py-12">
+        <h2 class="text-4xl font-bold mb-8">Exams Overview</h2>
         <div class="tabs">
-            <input type="radio" id="tab1" name="tab-control" checked>
-            <input type="radio" id="tab2" name="tab-control">
-            <ul>
-                <li title="Upcoming Exams">
-                    <label for="tab1" role="button">
-                        <span>Upcoming Exams</span>
-                    </label>
+            <!-- Tab Headers -->
+            <ul class="flex justify-center space-x-4 mb-6">
+                <li>
+                    <button id="tab1-btn"
+                            onclick="showTab('tab1')"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full shadow-md cursor-pointer hover:bg-blue-700 transition">
+                        Upcoming Exams
+                    </button>
                 </li>
-                <li title="Previous Exams">
-                    <label for="tab2" role="button">
-                        <span>Previous Exams</span>
-                    </label>
+                <li>
+                    <button id="tab2-btn"
+                            onclick="showTab('tab2')"
+                            class="inline-flex items-center px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full shadow-md cursor-pointer hover:bg-green-700 transition">
+                        Previous Exams
+                    </button>
                 </li>
             </ul>
-            <div class="slider">
-                <div class="indicator"></div>
-            </div>
+            <!-- Tab Content -->
             <div class="content">
                 <!-- Upcoming Exams Tab -->
-                <section>
+                <section id="tab1-content" class="tab-content">
                     {% if upcoming_exams %}
-                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {% for exam in upcoming_exams %}
-                                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                                    <h3 class="text-xl font-semibold">{{ exam.title }}</h3>
-                                    <p class="text-gray-600 mt-2">Start Time: {{ exam.start_time }}</p>
-                                    <p class="text-gray-600">End Time: {{ exam.end_time }}</p>
+                                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                                    <h3 class="text-2xl font-semibold text-gray-800">{{ exam.title }}</h3>
+                                    <p class="mt-2 text-gray-600">Start Time: {{ exam.start_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time|date:"F d, Y H:i" }}</p>
                                     <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
                                     <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
-                                       class="mt-4 inline-block text-blue-500 hover:underline">View Details</a>
-                                    {% comment %} {% if is_teacher %}
-                                    <a href="{% url 'edit_exam' exam_id=exam.exam_id %}" class="ml-2 inline-block text-yellow-500 hover:underline">Edit</a>
-                                    {% endif %} {% endcomment %}
+                                       class="mt-4 inline-block text-blue-600 hover:underline">View Details</a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -50,17 +43,17 @@
                     {% endif %}
                 </section>
                 <!-- Previous Exams Tab -->
-                <section>
+                <section id="tab2-content" class="tab-content hidden">
                     {% if previous_exams %}
-                        <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
                             {% for exam in previous_exams %}
-                                <div class="border rounded-lg p-4 bg-white shadow-sm">
-                                    <h3 class="text-xl font-semibold">{{ exam.title }}</h3>
-                                    <p class="text-gray-600 mt-2">Start Time: {{ exam.start_time }}</p>
-                                    <p class="text-gray-600">End Time: {{ exam.end_time }}</p>
+                                <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+                                    <h3 class="text-2xl font-semibold text-gray-800">{{ exam.title }}</h3>
+                                    <p class="mt-2 text-gray-600">Start Time: {{ exam.start_time|date:"F d, Y H:i" }}</p>
+                                    <p class="text-gray-600">End Time: {{ exam.end_time|date:"F d, Y H:i" }}</p>
                                     <p class="text-gray-600">Duration: {{ exam.duration_minutes }} minutes</p>
                                     <a href="{% url 'exam_detail' exam_id=exam.exam_id %}"
-                                       class="mt-4 inline-block text-blue-500 hover:underline">View Details</a>
+                                       class="mt-4 inline-block text-blue-600 hover:underline">View Details</a>
                                 </div>
                             {% endfor %}
                         </div>
@@ -71,4 +64,25 @@
             </div>
         </div>
     </div>
+    <!-- Tab Functionality Script -->
+    <script>
+        function showTab(tabId) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.add('hidden'));
+
+            // Remove active class from all buttons
+            const tabButtons = document.querySelectorAll('.tabs button');
+            tabButtons.forEach(button => button.classList.remove('bg-blue-700', 'bg-green-700'));
+
+            // Show the selected tab content and add active class to corresponding button
+            document.getElementById(tabId + '-content').classList.remove('hidden');
+            document.getElementById(tabId + '-btn').classList.add(tabId === 'tab1' ? 'bg-blue-700' : 'bg-green-700');
+        }
+
+        // Initialize with the first tab active
+        document.addEventListener('DOMContentLoaded', function() {
+            showTab('tab1');
+        });
+    </script>
 {% endblock content %}
