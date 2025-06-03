@@ -162,3 +162,4 @@ cython_debug/
 staticfiles/
 checkpdf.py
 frontend/node_modules/
+.DS_Store
