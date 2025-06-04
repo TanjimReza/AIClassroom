@@ -1,165 +1,184 @@
-review_profile: chill 
-summaries:
-  pr_summary: true
-  poems: true
-  sequence_diagrams: true
-
-reviews:
-  auto_approve_when_resolved: false
-  post_review_details: true
-  set_commit_status: true
 tools:
   ruff:
     enabled: true
   languagetool:
     enabled: true
 path_filters:
-  ignore:
-    - ".bzr"
-    - ".direnv"
-    - ".eggs"
-    - ".git"
-    - ".git-rewrite"
-    - ".hg"
-    - ".ipynb_checkpoints"
-    - ".mypy_cache"
-    - ".nox"
-    - ".pants.d"
-    - ".pyenv"
-    - ".pytest_cache"
-    - ".pytype"
-    - ".ruff_cache"
-    - ".svn"
-    - ".tox"
-    - ".vscode"
-    - "__pypackages__"
-    - "_build"
-    - "buck-out"
-    - "build"
-    - "dist"
-    - "site-packages"
-    - "**/node_modules/**"
-    - "**/.venv/**"
-    - "**/venv/**"
-    - "**/*.pyc"
-    - "**/__pycache__/**"
-    - "**/static/**"
-    - "**/staticfiles/**"
-    - "**/media/**"
-    - "**/.DS_Store"
-    - "**/migrations/**"
+  - ".bzr"
+  - ".direnv"
+  - ".eggs"
+  - ".git"
+  - ".git-rewrite"
+  - ".hg"
+  - ".ipynb_checkpoints"
+  - ".mypy_cache"
+  - ".nox"
+  - ".pants.d"
+  - ".pyenv"
+  - ".pytest_cache"
+  - ".pytype"
+  - ".ruff_cache"
+  - ".svn"
+  - ".tox"
+  - ".vscode"
+  - "__pypackages__"
+  - "_build"
+  - "buck-out"
+  - "build"
+  - "dist"
+  - "site-packages"
+  - "**/node_modules/**"
+  - "**/.venv/**"
+  - "**/venv/**"
+  - "**/*.pyc"
+  - "**/__pycache__/**"
+  - "**/static/**"
+  - "**/staticfiles/**"
+  - "**/media/**"
+  - "**/.DS_Store"
+  - "**/migrations/**"
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: true
+  sequence_diagrams: true
+  request_changes_workflow: false
+  review_status: true
+  commit_status: true
+  instructions: |
+    Keep the tone informal, constructive, and "chill".
+    Your primary focus should be on identifying:
+    1. **Security Vulnerabilities**: Flag any potential security risks with clear explanations.
+    2. **Runtime Errors**: Point out code that will likely cause a runtime error or fail execution.
+    3. **Error Handling Deficiencies**: Check for missing, inadequate, or incorrect error handling.
+    Promote readability in all code. When suggesting improvements, briefly explain the 'why'.
+    If type hints are missing in Python, suggest adding them for clarity but be lenient if the code is simple.
+  path_instructions:
+    - path: "**/*.py"
+      instructions: |
+        1. Check for improper if/else conditions or overly complex conditional logic that could be simplified.
+        2. Ruff linting and formatting should primarily follow `pyproject.toml`. Beyond Ruff's `select` in `pyproject.toml`, also consider general Python best practices related to security, readability, and maintainability.
+        # This Ruff-related guidance is still pending your clarification.
+        3. The docstrings should be up-to-date with the implementations. Please highlight the outdated ones.
+        4. When a function/method in a module or file changes, check if files that depend on the changed function/method might need updates.
+        5. Review Django querysets for potential performance improvements and suggest optimizations where applicable (general reminder).
+    - path: "**/models.py"
+      instructions: |
+        Django Models:
+        - Focus on Django ORM query efficiency (N+1 problems, missing `select_related`/`prefetch_related`).
+        - Check Django security best practices for models.
+        - For Model `Meta` options: Encourage basic best practices like using `verbose_name` for clarity, considering sensible default `ordering`, and an awareness of `unique_together`/`constraints` or `indexes` where data integrity or query patterns suggest they'd be beneficial.
+        - **Overridden `save()`/`delete()` methods**: When `save()` or `delete()` methods are overridden, check for:
+            - Call to `super().save(*args, **kwargs)` or `super().delete(*args, **kwargs)`.
+            - Correct handling of arguments (`*args`, `**kwargs`).
+            - Clarity of the logic and any side effects.
+            - Ensure the operations are efficient.
+            - Ensure that for every `model.save()` call, `model.full_clean()` is called before it, unless there's a clear reason not to (e.g., saving a new instance with defaults that will pass validation later, or partial updates).
+    - path: "**/views.py"
+      instructions: |
+        Django View Logic (Function-based):
+        - Prioritize security (CSRF, XSS, SQLi risks).
+        - Review business logic for clarity, correctness.
+        - Ensure proper request/response handling (e.g., handling GET/POST appropriately, using `django.contrib.messages` for user feedback) and robust error handling.
+        - **Data Validation**: Ensure robust input validation.
+        - **ORM Performance**: Check for N+1 query issues from view logic.
+        - **Decorators**: Check for correct and appropriate use of common Django view decorators (e.g., `@login_required`, `@permission_required`, `@require_http_methods`). Suggest their use if a view seems to be missing necessary protection or constraints.
+        - **Transaction Management**: If a view performs multiple database write operations, suggest wrapping them in `django.db.transaction.atomic()` if atomicity seems important for data integrity.
+        - **Caching**: Actively look for opportunities to apply view-level caching (e.g., using `@cache_page` or Django's low-level cache API for views that are computationally expensive and serve frequently accessed, non-user-specific data). Provide clear reasoning for any caching suggestions.
 
-custom_instructions:
-  - instruction: |
-      Keep the tone informal, constructive, and "chill".
-      Your primary focus should be on identifying:
-      1. **Security Vulnerabilities**: Flag any potential security risks with clear explanations.
-      2. **Runtime Errors**: Point out code that will likely cause a runtime error or fail execution.
-      3. **Error Handling Deficiencies**: Check for missing, inadequate, or incorrect error handling.
-      Promote readability in all code. When suggesting improvements, briefly explain the 'why'.
-      If type hints are missing in Python, suggest adding them for clarity but be lenient if the code is simple.
+    - path: "**/forms.py"
+      instructions: |
+        Django Forms:
+        - Ensure CSRF protection.
+        - Verify `form.is_valid()` usage.
+        - Review custom validation and cleaning logic.
 
-  - path_pattern: "**/*.py"
-    instruction: |
-      1. Check for improper if/else conditions or overly complex conditional logic that could be simplified.
-      2. Ruff linting and formatting should primarily follow `pyproject.toml`.Beyond Ruff's `select` in `pyproject.toml`, also consider general Python best practices related to security, readability, and maintainability.
-      3. The docstrings are up-to-date with the implementations. Please highlight the outdated ones.
-      4. When an function in a module or file changes, ensure that all files that depend on the changed function are updated accordingly.
-      5. Review Django querysets for potential performance improvements and suggest optimizations where applicable.
+    - path: "**/admin.py"
+      instructions: |
+        Django Admin:
+        - For basic customizations, check for common issues like N+1 problems in `list_display` methods or custom functions.
+        - Ensure custom admin actions handle permissions and potential side effects carefully.
+        - Promote readability and simplicity in admin configurations.
+    - path: "**/app.py"
+      instructions: |
+        Flask Applications (`app.py`):
+        - **Security**: Thoroughly check for common web vulnerabilities (XSS, CSRF, secure session management, proper input validation on all request data: args, form, json).
+        - **Best Practices**: Review adherence to Flask best practices for routing, request handling, blueprint organization and registration, application factory pattern, and context management.
+        - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable, or overly complex import patterns.
+        - **Data Validation**: Ensure robust input validation.
+        - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
+    - path: "**/routes.py"
+      instructions: |
+        Flask Applications (`routes.py`):
+        - **Security**: Thoroughly check for common web vulnerabilities (XSS, CSRF, secure session management, proper input validation on all request data: args, form, json).
+        - **Best Practices**: Review adherence to Flask best practices for routing, request handling, blueprint organization and registration.
+        - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable, or overly complex import patterns between blueprints or modules. Ensure blueprint registrations are clear.
+        - **Data Validation**: Ensure robust input validation.
+        - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
+    - path: "**/views.py"
+      instructions: |
+        Flask Applications (`views.py` in blueprints):
+        - **Security**: Thoroughly check for common web vulnerabilities (XSS, CSRF, secure session management, proper input validation on all request data: args, form, json).
+        - **Best Practices**: Review adherence to Flask best practices for view logic, request handling, and context management.
+        - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable.
+        - **Data Validation**: Ensure robust input validation.
+        - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
+    - path: "**/__init__.py"
+      instructions: |
+        Flask Applications (`__init__.py` for app factory/blueprints):
+        - **Security**: Review for secure configuration loading.
+        - **Best Practices**: If an app factory, ensure correct configuration, extension registration, and blueprint registration. For blueprint `__init__.py`, ensure correct setup.
+        - **Import Clarity & Structure**: Critical here to check for clean import structures and avoidance of circular dependencies during app/blueprint initialization.
+    - path: "**/tasks.py"
+      instructions: |
+        Celery Tasks (or similar):
+        - Idempotency, robust error handling (`autoretry_for`), appropriate retry mechanisms.
+        - Warn about long-running synchronous operations. Promote clear logging.
+    - path: "**/utils.py"
+      instructions: |
+        Utility/Helper Functions (`utils.py`):
+        - Ensure functions are small, single-purpose, well-documented. Promote readability.
+        - Check for overly complex logic.
+    - path: "**/*_utils.py"
+      instructions: |
+        Utility/Helper Functions (`*_utils.py`):
+        - Ensure functions are small, single-purpose, well-documented. Promote readability.
+        - Check for overly complex logic.
+    - path: "**/*_checker.py"
+      instructions: |
+        Utility/Helper Functions (`*_checker.py`):
+        - Ensure functions are small, single-purpose, well-documented. Promote readability.
+        - Check for overly complex logic.
+    - path: "**/helpers.py"
+      instructions: |
+        Utility/Helper Functions (`helpers.py`):
+        - Ensure functions are small, single-purpose, well-documented. Promote readability.
+        - Check for overly complex logic.
+    - path: "**/*.py"
+      instructions: |
+        When `pandas_gbq.to_gbq()` or any imported version of this function (e.g., `from pandas_gbq import to_gbq`) is used:
+        1. Note the `if_exists` parameter (defaults to `'fail'`, not `'append'`). We mostly use 'append' or 'replace'.
+        2. If `if_exists='replace'`, check context: if the target table isn't clearly a staging/temporary table, flag for confirmation to prevent accidental data loss.
+        3. If `if_exists='append'`, suggest verifying schema compatibility between the DataFrame and the BigQuery table.
+        4. If `if_exists='fail'` (or not specified) and the surrounding logic implies an intent to overwrite or append, highlight the potential mismatch.
+        5. Check for `pandas_gbq.to_gbq()` usage inside loops processing data row-by-row or without batching. If dealing with potentially large datasets, suggest using the `chunksize` parameter for more efficient, batched uploads.
+        6. Review `table_schema` definition in `to_gbq()` calls. If `table_schema` is not provided, suggest verifying that the inferred BigQuery schema matches the DataFrame's structure and desired BigQuery data types, or recommend explicitly defining it for clarity and control.
+    - path: "**/*.sql"
+      instructions: |
+        SQL File Review:
+        **Formatting & Readability (Gentle Reminders for major deviations):**
+        - Keywords capitalized. 4-space indentation. Trailing commas. Blank lines for separation. Comments: `-- inline`, `/* block */`.
 
-  - path_pattern: "**/models.py"
-    instruction: |
-      Django Models:
-      - Focus on Django ORM query efficiency (N+1 problems, missing `select_related`/`prefetch_related`).
-      - Check Django security best practices for models.
-      - For Model `Meta` options: Encourage basic best practices like using `verbose_name` for clarity, considering sensible default `ordering`, and an awareness of `unique_together`/`constraints` or `indexes` where data integrity or query patterns suggest they'd be beneficial.
-      - **Overridden `save()`/`delete()` methods**: When `save()` or `delete()` methods are overridden, check for:
-          - Call to `super().save(*args, **kwargs)` or `super().delete(*args, **kwargs)`.
-          - Correct handling of arguments (`*args`, `**kwargs`).
-          - Clarity of the logic and any side effects.
-          - Ensure the operations are efficient.
-          - Ensure that for every model.save() there is a model.full_clean() that precedes it.
+        **Basic Concerns & BigQuery Best Practices:**
+        - **DDL**: Appropriate data types, constraints, descriptions. Partitioned/clustered table definitions.
+        - **DML (UPDATE, DELETE, MERGE)**: **CRITICAL** `WHERE` clauses must be specific. `MERGE ON` conditions robust.
+        - Discourage `SELECT *` without `LIMIT`. Filter on partition/cluster keys early. Cost optimization. Efficient JOINs.
 
-  - path_pattern: "**/views.py"
-    instruction: |
-      Django View Logic (Function-based):
-      - Prioritize security (CSRF, XSS, SQLi risks).
-      - Review business logic for clarity, correctness.
-      - Ensure proper request/response handling (e.g., handling GET/POST appropriately, using `django.contrib.messages` for user feedback) and robust error handling.
-      - **Data Validation**: Ensure robust input validation.
-      - **ORM Performance**: Check for N+1 query issues from view logic.
-      - **Decorators**: Check for correct and appropriate use of common Django view decorators (e.g., `@login_required`, `@permission_required`, `@require_http_methods`). Suggest their use if a view seems to be missing necessary protection or constraints.
-      - **Transaction Management**: If a view performs multiple database write operations, suggest wrapping them in `django.db.transaction.atomic()` if atomicity seems important for data integrity.
-      - **Caching**: Actively look for opportunities to apply view-level caching (e.g., using `@cache_page` or Django's low-level cache API for views that are computationally expensive and serve frequently accessed, non-user-specific data). Provide clear reasoning for any caching suggestions.
+        **Custom SQL Pattern Check: Date Alias Mismatch**
+        - If a table/CTE is aliased with a full month name AND source name (before `AS` or alias itself) is `YYYYMM` six-digit number:
+          1. Extract `MM`. Compare with expected month number for alias.
+          2. If mismatched, flag (e.g., `FROM sales_202502 AS march` is wrong).
 
-  - path_pattern: "**/forms.py"
-    instruction: |
-      Django Forms:
-      - Ensure CSRF protection.
-      - Verify `form.is_valid()` usage.
-      - Review custom validation and cleaning logic.
-
-  - path_pattern: "**/admin.py"
-    instruction: |
-      Django Admin:
-      - For basic customizations, check for common issues like N+1 problems in `list_display` methods or custom functions.
-      - Ensure custom admin actions handle permissions and potential side effects carefully.
-      - Promote readability and simplicity in admin configurations.
-
-  # Flask specific instructions
-  - path_pattern: "**/app.py"
-  - path_pattern: "**/routes.py"
-  - path_pattern: "**/views.py"
-  - path_pattern: "**/__init__.py" 
-    instruction: |
-      Flask Applications:
-      - **Security**: Thoroughly check for common web vulnerabilities (XSS, CSRF, secure session management, proper input validation on all request data: args, form, json).
-      - **Best Practices**: Review adherence to Flask best practices for routing, request handling, blueprint organization and registration, application factory pattern, and context management.
-      - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable, or overly complex import patterns between blueprints or modules. Ensure blueprint registrations are clear.
-      - **Data Validation**: Ensure robust input validation.
-      - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
-
-  - path_pattern: "**/tasks.py"
-    instruction: |
-      Celery Tasks (or similar):
-      - Idempotency, robust error handling (`autoretry_for`), appropriate retry mechanisms.
-      - Warn about long-running synchronous operations. Promote clear logging.
-
-  - path_pattern: "**/utils.py"
-  - path_pattern: "**/*_utils.py"
-  - path_pattern: "**/*_checker.py"
-  - path_pattern: "**/helpers.py"
-    instruction: |
-      Utility/Helper Functions:
-      - Ensure functions are small, single-purpose, well-documented. Promote readability.
-      - Check for overly complex logic.
-
-  - path_pattern: "**/*.py"
-    instruction: |
-      When `pandas_gbq.to_gbq()` or any import version of this is used:
-      1. Note `if_exists` parameter (defaults to 'append'). We mostly use 'append' or 'replace'.
-      2. If `if_exists='replace'`, check context: if target table isn't clearly staging/temp, flag for confirmation.
-      3. If `if_exists='append'`, suggest verifying schema compatibility.
-      4. If `if_exists='fail'` (or default) and logic implies overwrite/append, highlight mismatch.
-      5. Check for `pandas_gbq.to_gbq()` usage in loops or large datasets. Suggest using `chunksize` for efficiency.
-      6. Check schema definitions in `to_gbq()` calls. If schema is not provided, suggest verifying that the target table's schema matches the DataFrame's structure.
-
-  - path_pattern: "**/*.sql"
-    instruction: |
-      SQL File Review:
-      **Formatting & Readability (Gentle Reminders for major deviations):**
-      - Keywords capitalized. 4-space indentation. Trailing commas. Blank lines for separation. Comments: `-- inline`, `/* block */`.
-
-      **Basic Concerns & BigQuery Best Practices:**
-      - **DDL**: Appropriate data types, constraints, descriptions. Partitioned/clustered table definitions.
-      - **DML (UPDATE, DELETE, MERGE)**: **CRITICAL** `WHERE` clauses must be specific. `MERGE ON` conditions robust.
-      - Discourage `SELECT *` without `LIMIT`. Filter on partition/cluster keys early. Cost optimization. Efficient JOINs.
-
-      **Custom SQL Pattern Check: Date Alias Mismatch**
-      - If a table/CTE is aliased with a full month name AND source name (before `AS` or alias itself) is `YYYYMM` six-digit number:
-        1. Extract `MM`. Compare with expected month number for alias.
-        2. If mismatched, flag (e.g., `FROM sales_202502 AS march` is wrong).
-
-      **Custom SQL Pattern Check: Entity/Context Mismatch**
-      - Infer primary subject entity (filename, most referenced tables).
-      - If script heavily uses tables from a distinctly different entity without clear bridging logic, flag for human confirmation.
+        **Custom SQL Pattern Check: Entity/Context Mismatch**
+        - Infer primary subject entity (filename, most referenced tables).
+        - If script heavily uses tables from a distinctly different entity without clear bridging logic, flag for human confirmation.
