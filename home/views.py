@@ -71,7 +71,7 @@ class CustomPasswordResetCompleteView(PasswordResetCompleteView):
 #! ---------------------------
 
 
-def home(request):
+def home(reqest):
     user, type = request.user, request.user.get_user_type_display()
     # return HttpResponse(f"Hello, world! {user} - {type}"
     return render(request, "base.html")
@@ -783,5 +783,3 @@ def exams_overview(request):
     }
 
     return render(request, 'exam_overview.html', context)
-
-
