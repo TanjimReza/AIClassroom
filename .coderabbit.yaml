@@ -17,43 +17,6 @@ reviews:
     languagetool:
       enabled: true
       # language: "en-US"
-
-  # Path filters (now nested under reviews)
-  path_filters:
-    - ".bzr"
-    - ".direnv"
-    - ".eggs"
-    - ".git"
-    - ".git-rewrite"
-    - ".hg"
-    - ".ipynb_checkpoints"
-    - ".mypy_cache"
-    - ".nox"
-    - ".pants.d"
-    - ".pyenv"
-    - ".pytest_cache"
-    - ".pytype"
-    - ".ruff_cache"
-    - ".svn"
-    - ".tox"
-    - ".vscode"
-    - "__pypackages__"
-    - "_build"
-    - "buck-out"
-    - "build"
-    - "dist"
-    - "site-packages"
-    - "**/node_modules/**"
-    - "**/.venv/**"
-    - "**/venv/**"
-    - "**/*.pyc"
-    - "**/__pycache__/**"
-    - "**/static/**"
-    - "**/staticfiles/**"
-    - "**/media/**"
-    - "**/.DS_Store"
-    - "**/migrations/**"
-
   # Path-specific instructions
   path_instructions:
     - path: "**/*.py"
