@@ -212,7 +212,7 @@ from django.core.files.storage import default_storage
 class CourseMaterial(models.Model):
     title = models.CharField(max_length=255)
     file = models.FileField(upload_to=classroom_directory_path)
-    course_material_url = models.URLField(max_length=500, blank=True, editable=False, null=True)
+    coursee_material_url = models.URLField(max_length=500, blank=True, editable=False, null=True)
     description = models.TextField(blank=True, null=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="materials")
