@@ -1,14 +1,5 @@
-# Coderabbit Configuration - VERSION 8 (Further Schema Corrections)
-
-# Top-level tone instructions (formerly reviews.instructions)
 tone_instructions: |
-  Keep the tone informal, constructive, and "chill".
-  Your primary focus should be on identifying:
-  1. **Security Vulnerabilities**: Flag any potential security risks with clear explanations.
-  2. **Runtime Errors**: Point out code that will likely cause a runtime error or fail execution.
-  3. **Error Handling Deficiencies**: Check for missing, inadequate, or incorrect error handling.
-  Promote readability in all code. When suggesting improvements, briefly explain the 'why'.
-  If type hints are missing in Python, suggest adding them for clarity but be lenient if the code is simple.
+  Be constructive. Flag security risks with context. Catch runtime errors. Ensure robust error handling. Prioritize readable code. Always explain reasoning behind suggestions. Add Python type hints when they improve clarity, not just simple cases.
 
 reviews:
   profile: chill
@@ -18,17 +9,11 @@ reviews:
   request_changes_workflow: false
   review_status: true
   commit_status: true
-
-  # Tools configuration (now nested under reviews)
   tools:
     ruff:
       enabled: true
-      # Coderabbit should use the [tool.ruff] settings from your project's pyproject.toml.
     languagetool:
       enabled: true
-      # language: "en-US"
-
-  # Path filters (now nested under reviews)
   path_filters:
     - ".bzr"
     - ".direnv"
@@ -63,8 +48,6 @@ reviews:
     - "**/media/**"
     - "**/.DS_Store"
     - "**/migrations/**"
-
-  # Path-specific instructions
   path_instructions:
     - path: "**/*.py"
       instructions: |
@@ -125,7 +108,7 @@ reviews:
         - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable, or overly complex import patterns between blueprints or modules. Ensure blueprint registrations are clear.
         - **Data Validation**: Ensure robust input validation.
         - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
-    - path: "**/views.py" # Assuming this could also be for Flask views in blueprints
+    - path: "**/views.py"
       instructions: |
         Flask Applications (`views.py` in blueprints):
         - **Security**: Thoroughly check for common web vulnerabilities (XSS, CSRF, secure session management, proper input validation on all request data: args, form, json).
@@ -133,7 +116,7 @@ reviews:
         - **Import Clarity & Structure**: Pay attention to import statements. Flag potential circular dependencies if identifiable.
         - **Data Validation**: Ensure robust input validation.
         - **Error Handling**: Check for appropriate use of custom error handlers (`@app.errorhandler`).
-    - path: "**/__init__.py" # Flask __init__.py for app factory or blueprint setup
+    - path: "**/__init__.py"
       instructions: |
         Flask Applications (`__init__.py` for app factory/blueprints):
         - **Security**: Review for secure configuration loading.
@@ -164,7 +147,7 @@ reviews:
         Utility/Helper Functions (`helpers.py`):
         - Ensure functions are small, single-purpose, well-documented. Promote readability.
         - Check for overly complex logic.
-    - path: "**/*.py" # Pandas-GBQ (General Python, instruction refined)
+    - path: "**/*.py"
       instructions: |
         When `pandas_gbq.to_gbq()` or any imported version of this function (e.g., `from pandas_gbq import to_gbq`) is used:
         1. Note the `if_exists` parameter (defaults to `'fail'`). We mostly use 'append' or 'replace'.
